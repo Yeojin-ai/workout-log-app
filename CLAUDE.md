@@ -108,11 +108,16 @@ users before 9am.
      react-native-svg polylines): exercise chips ordered by frequency; selected exercise shows
      per-session max-weight and total-reps lines (`getExerciseSessionStats`, last 12 sessions).
   4. Month summary strip (one heat cell per day of the current month).
-  5. **Data Backup card**: CSV export (share sheet via expo-sharing) / import (expo-document-picker).
-     CSV logic lives in [lib/backup.ts](lib/backup.ts) — one file for all three tables, first column
-     `type` = `log`/`goal`/`note`, UTF-8 BOM for Excel, RFC-4180 quoting. Import **replaces** each
-     date that appears in the file (per-table) inside a transaction, so re-importing is safe;
-     dates absent from the file are untouched.
+  5. **Data Backup card**: CSV export / import. CSV logic lives in [lib/backup.ts](lib/backup.ts) —
+     one file for all three tables, first column `type` = `log`/`goal`/`note`, UTF-8 BOM for Excel,
+     RFC-4180 quoting. Import (expo-document-picker) **replaces** each date that appears in the file
+     (per-table) inside a transaction, so re-importing is safe; dates absent from the file are
+     untouched. Export saves the file via SAF (`expo-file-system/legacy` StorageAccessFramework) to
+     a user-picked folder whose permission URI is cached in the `meta` table (`backup_dir_uri`) —
+     Android 11+ forbids granting the Download **root**, so the user picks/creates a subfolder
+     (e.g. Download/WorkoutLog) once and later exports save there silently. Share-sheet export
+     (expo-sharing) remains only as the non-Android fallback; sharing straight to KakaoTalk pastes
+     the CSV as text, which is why we save to disk instead.
 - `app/log/edit.tsx?id=` — modal for editing/deleting a single set (weight + reps).
 
 Empty weight saves as 0 (bodyweight exercises). Set rows everywhere: **tap = edit modal, long-press

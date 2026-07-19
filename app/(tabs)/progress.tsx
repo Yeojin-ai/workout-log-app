@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { File, Paths } from 'expo-file-system';
+import { StorageAccessFramework, writeAsStringAsync } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { buildBackupCsv, parseBackupCsv, importBackup } from '../../lib/backup';
@@ -12,6 +13,8 @@ import {
   getSetCountsByExerciseSince,
   getLastWorkoutDate,
   getDailySetCounts,
+  getMetaValue,
+  setMetaValue,
   toDateString,
   todayString,
 } from '../../lib/db';
@@ -20,6 +23,11 @@ import { ExerciseChart, type SessionStat } from '../../components/ExerciseChart'
 import { StickFigure, PartGauges, avatarStage, GOAL_STATE, type AvatarState } from '../../components/StickFigure';
 import { classifyExercise, partLevel, MUSCLE_PARTS, type MusclePart } from '../../constants/muscles';
 import { colors } from '../../constants/colors';
+
+// 내보내기 폴더의 SAF 권한 URI를 저장해 두는 meta 키
+const BACKUP_DIR_KEY = 'backup_dir_uri';
+// 폴더 선택기가 처음에 Download 폴더를 보여주도록 하는 힌트
+const DOWNLOAD_TREE_HINT = 'content://com.android.externalstorage.documents/tree/primary%3ADownload';
 
 type Stats = {
   workoutDays: number;
@@ -271,18 +279,51 @@ export default function StatsScreen() {
         Alert.alert(strings.backupTitle, strings.backupNothing);
         return;
       }
-      const file = new File(Paths.cache, `workout-log-backup-${todayString()}.csv`);
-      if (file.exists) file.delete();
-      file.create();
-      file.write(csv);
-      await Sharing.shareAsync(file.uri, {
-        mimeType: 'text/csv',
-        UTI: 'public.comma-separated-values-text',
-        dialogTitle: strings.backupExport,
-      });
+      const baseName = `workout-log-backup-${todayString()}`;
+
+      if (Platform.OS !== 'android') {
+        // Android 외 플랫폼은 공유 시트로 대체
+        const file = new File(Paths.cache, `${baseName}.csv`);
+        if (file.exists) file.delete();
+        file.create();
+        file.write(csv);
+        await Sharing.shareAsync(file.uri, {
+          mimeType: 'text/csv',
+          UTI: 'public.comma-separated-values-text',
+          dialogTitle: strings.backupExport,
+        });
+        return;
+      }
+
+      // Android: SAF로 사용자가 지정한 폴더(권장: Download)에 직접 저장.
+      // 처음 한 번 폴더를 고르면 권한 URI를 meta에 저장해 두고 재사용한다.
+      const saved = await saveViaSaf(csv, baseName, await getMetaValue(db, BACKUP_DIR_KEY));
+      if (saved === 'denied') return; // 폴더 선택을 취소함
+      // SAF 폴더 선택기에서 막 돌아온 직후에 띄우는 Alert는 씹힐 수 있어 잠시 기다린다
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      Alert.alert(strings.exportDoneTitle, strings.exportDoneMessage(`${baseName}.csv`));
     } catch {
       Alert.alert(strings.exportFailedTitle, strings.exportFailedMessage);
     }
+  }
+
+  // 저장된 폴더 권한으로 파일 생성을 시도하고, 권한이 없거나 만료됐으면 다시 폴더를 고르게 한다.
+  async function saveViaSaf(csv: string, baseName: string, knownDirUri: string | null): Promise<'saved' | 'denied'> {
+    if (knownDirUri) {
+      try {
+        const fileUri = await StorageAccessFramework.createFileAsync(knownDirUri, baseName, 'text/csv');
+        await writeAsStringAsync(fileUri, csv);
+        return 'saved';
+      } catch {
+        // 권한 만료/폴더 삭제 → 아래에서 다시 요청
+      }
+    }
+    const perm = await StorageAccessFramework.requestDirectoryPermissionsAsync(DOWNLOAD_TREE_HINT);
+    if (!perm.granted) return 'denied';
+    await setMetaValue(db, BACKUP_DIR_KEY, perm.directoryUri);
+    const fileUri = await StorageAccessFramework.createFileAsync(perm.directoryUri, baseName, 'text/csv');
+    await writeAsStringAsync(fileUri, csv);
+    return 'saved';
   }
 
   async function importCsv() {

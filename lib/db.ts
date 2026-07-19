@@ -61,6 +61,19 @@ export async function migrateDb(db: SQLiteDatabase) {
   await renameKoreanExercises(db);
 }
 
+export async function getMetaValue(db: SQLiteDatabase, key: string): Promise<string | null> {
+  const row = await db.getFirstAsync<{ value: string }>('SELECT value FROM meta WHERE key = ?', key);
+  return row?.value ?? null;
+}
+
+export function setMetaValue(db: SQLiteDatabase, key: string, value: string) {
+  return db.runAsync(
+    'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+    key,
+    value
+  );
+}
+
 export function getDayNote(db: SQLiteDatabase, date: string) {
   return db.getFirstAsync<DayNote>('SELECT * FROM day_notes WHERE date = ?', date);
 }
