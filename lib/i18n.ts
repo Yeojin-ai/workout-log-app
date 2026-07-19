@@ -1,0 +1,162 @@
+import { getLocales } from 'expo-localization';
+
+// 기기 언어가 한국어면 한국어, 그 외에는 영어로 표시한다.
+export const isKorean = (getLocales()[0]?.languageCode ?? 'en') === 'ko';
+
+const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
+const WEEKDAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const ko = {
+  tabToday: '오늘',
+  tabTracking: '트래킹',
+  tabStats: '통계',
+  addLogTitle: '운동 기록 추가',
+  editSetTitle: '세트 수정',
+  repsUnit: '회',
+
+  emptyToday: '아직 오늘 운동이 없어요.\n아래 버튼으로 운동과 목표 세트를 정해 보세요!',
+  addLog: '+ 기록',
+  addExercise: '+ 운동 추가',
+  setGoalTitle: '운동 추가',
+  targetSetsLabel: '목표 세트 수',
+  goalProgress: (done: number, target: number) => `${done}/${target}세트`,
+  goalDone: '목표 달성! 🎉',
+  save: '저장',
+  monthTitle: (year: number, month: number) => `${year}년 ${month}월`,
+  weekdaysShort: WEEKDAYS_KO,
+  selectExerciseHint: '종목을 탭하면 그래프가 보여요',
+  chartWeight: '최고 무게(kg)',
+  chartReps: '총 횟수',
+  exerciseChartSection: '종목별 그래프',
+  noChartData: '아직 이 종목의 기록이 없어요.',
+
+  avatarTitle: '나의 졸라맨',
+  partNames: { legs: '하체', back: '등', chest: '가슴', shoulders: '어깨', arms: '팔', core: '코어' } as Record<string, string>,
+  avatarNoData: '아직 기록이 없어요. 운동을 시작하면 졸라맨이 태어나요!',
+  avatarEnergetic: '오늘도 운동 완료! 불타는 중',
+  avatarNormal: '컨디션 좋음! 이 흐름 그대로',
+  avatarSlouch: (days: number) => `${days}일째 휴식... 슬슬 몸이 굳어가요`,
+  avatarJelly: (days: number) => `${days}일째 흐물흐물... 다시 운동할 시간!`,
+  avatarGhost: '졸라맨이 유령이 되어가요... 살려주세요',
+  avatarWeakHint: (part: string) => `요즘 ${part} 운동이 부족해요`,
+  monthSummaryTitle: '이번 달 요약',
+  monthSummary: (days: number, volumeKg: number) => `${days}일 운동 · 총 ${volumeKg.toLocaleString()}kg`,
+  memoLabel: '메모',
+  memoPlaceholder: '예: PT 받은 날, 컨디션, 특이사항...',
+  cardioLabel: '유산소',
+  cardioPlaceholder: '예: 러닝 4km, 천국의 계단 30분...',
+  deleteGoalTitle: '목표 삭제',
+  deleteGoalMessage: (name: string) => `${name} 목표를 삭제할까요? (기록된 세트는 남아요)`,
+  dateLabel: '날짜',
+  today: '오늘',
+  deleteSetTitle: '세트 삭제',
+  deleteSetMessage: (name: string, weight: number, reps: number) =>
+    `${name} ${weight}kg × ${reps}회 기록을 삭제할까요?`,
+  cancel: '취소',
+  delete: '삭제',
+
+  exerciseLabel: '운동 기구',
+  customExercisePlaceholder: '목록에 없으면 직접 입력',
+  weightLabel: '중량 (kg)',
+  repsLabel: '횟수',
+  savedSets: (name: string, count: number) => `✓ ${name} ${count}세트 저장됨`,
+  saveAndNext: '저장하고 다음 세트',
+  saveAndClose: '저장하고 닫기',
+  saveFailedTitle: '저장 실패',
+  saveFailedMessage: '기록을 저장하지 못했어요. 다시 시도해 주세요.',
+
+  emptyHistory: '아직 기록이 없어요.',
+  setIndex: (n: number) => `${n}세트`,
+  setDetail: (weight: number, reps: number) => `${weight}kg × ${reps}회`,
+
+  statWorkoutDays: '운동한 날',
+  statStreak: '연속 기록',
+  statWeekVolume: '이번 주 볼륨',
+  statTotalVolume: '누적 볼륨',
+  statTopExercises: '자주 한 운동',
+  days: (n: number) => `${n}일`,
+  sets: (n: number) => `${n}세트`,
+
+  formatDateShort: (month: number, day: number, weekday: number) =>
+    `${month}월 ${day}일 (${WEEKDAYS_KO[weekday]})`,
+  formatDateLong: (year: number, month: number, day: number, weekday: number) =>
+    `${year}년 ${month}월 ${day}일 (${WEEKDAYS_KO[weekday]})`,
+};
+
+const en: typeof ko = {
+  tabToday: 'Today',
+  tabTracking: 'Tracking',
+  tabStats: 'Stats',
+  addLogTitle: 'Add Set',
+  editSetTitle: 'Edit Set',
+  repsUnit: 'reps',
+
+  emptyToday: 'No workout yet today.\nAdd an exercise and a set goal below!',
+  addLog: '+ Log',
+  addExercise: '+ Add Exercise',
+  setGoalTitle: 'Add Exercise',
+  targetSetsLabel: 'Target sets',
+  goalProgress: (done, target) => `${done}/${target} sets`,
+  goalDone: 'Goal reached! 🎉',
+  save: 'Save',
+  monthTitle: (year, month) => `${MONTHS_EN[month - 1]} ${year}`,
+  weekdaysShort: WEEKDAYS_EN,
+  selectExerciseHint: 'Tap an exercise to see its chart',
+  chartWeight: 'Top weight (kg)',
+  chartReps: 'Total reps',
+  exerciseChartSection: 'Exercise Charts',
+  noChartData: 'No sets logged for this exercise yet.',
+
+  avatarTitle: 'My Stick Buddy',
+  partNames: { legs: 'Legs', back: 'Back', chest: 'Chest', shoulders: 'Shoulders', arms: 'Arms', core: 'Core' } as Record<string, string>,
+  avatarNoData: 'No logs yet. Start working out and your buddy will be born!',
+  avatarEnergetic: 'Worked out today! On fire',
+  avatarNormal: 'Feeling great! Keep it up',
+  avatarSlouch: (days) => `${days} days off... getting stiff`,
+  avatarJelly: (days) => `${days} days off... turning to jelly. Time to train!`,
+  avatarGhost: 'Your buddy is becoming a ghost... help!',
+  avatarWeakHint: (part) => `${part} could use some love lately`,
+  monthSummaryTitle: 'This Month',
+  monthSummary: (days, volumeKg) => `${days} workout days · ${volumeKg.toLocaleString()}kg total`,
+  memoLabel: 'Notes',
+  memoPlaceholder: 'e.g. PT day, condition, anything...',
+  cardioLabel: 'Cardio',
+  cardioPlaceholder: 'e.g. running 4km, stairmaster 30min...',
+  deleteGoalTitle: 'Delete goal',
+  deleteGoalMessage: (name) => `Delete the goal for ${name}? (Logged sets are kept)`,
+  dateLabel: 'Date',
+  today: 'Today',
+  deleteSetTitle: 'Delete set',
+  deleteSetMessage: (name, weight, reps) => `Delete ${name} ${weight}kg × ${reps} reps?`,
+  cancel: 'Cancel',
+  delete: 'Delete',
+
+  exerciseLabel: 'Exercise',
+  customExercisePlaceholder: 'Not in the list? Type it here',
+  weightLabel: 'Weight (kg)',
+  repsLabel: 'Reps',
+  savedSets: (name, count) => `✓ ${name} — ${count} ${count === 1 ? 'set' : 'sets'} saved`,
+  saveAndNext: 'Save & next set',
+  saveAndClose: 'Save & close',
+  saveFailedTitle: 'Save failed',
+  saveFailedMessage: "Couldn't save the set. Please try again.",
+
+  emptyHistory: 'No logs yet.',
+  setIndex: (n) => `Set ${n}`,
+  setDetail: (weight, reps) => `${weight}kg × ${reps} reps`,
+
+  statWorkoutDays: 'Workout days',
+  statStreak: 'Current streak',
+  statWeekVolume: 'Volume this week',
+  statTotalVolume: 'Lifetime volume',
+  statTopExercises: 'Top exercises',
+  days: (n) => `${n} ${n === 1 ? 'day' : 'days'}`,
+  sets: (n) => `${n} ${n === 1 ? 'set' : 'sets'}`,
+
+  formatDateShort: (month, day, weekday) => `${MONTHS_EN[month - 1]} ${day} (${WEEKDAYS_EN[weekday]})`,
+  formatDateLong: (year, month, day, weekday) =>
+    `${MONTHS_EN[month - 1]} ${day}, ${year} (${WEEKDAYS_EN[weekday]})`,
+};
+
+export const strings = isKorean ? ko : en;
