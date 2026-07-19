@@ -1,7 +1,11 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { File, Paths } from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
+import { buildBackupCsv, parseBackupCsv, importBackup } from '../../lib/backup';
 import {
   getExerciseNamesByFrequency,
   getExerciseSessionStats,
@@ -243,8 +247,75 @@ export default function StatsScreen() {
           <Text style={styles.caption}>{strings.monthSummary(month.days, month.volumeKg)}</Text>
         </View>
       )}
+
+      {/* 데이터 백업 */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{strings.backupTitle}</Text>
+        <Text style={styles.hint}>{strings.backupHint}</Text>
+        <View style={styles.backupRow}>
+          <Pressable style={styles.backupButton} onPress={() => exportCsv()}>
+            <Text style={styles.backupButtonText}>{strings.backupExport}</Text>
+          </Pressable>
+          <Pressable style={[styles.backupButton, styles.backupButtonSecondary]} onPress={() => importCsv()}>
+            <Text style={styles.backupButtonText}>{strings.backupImport}</Text>
+          </Pressable>
+        </View>
+      </View>
     </ScrollView>
   );
+
+  async function exportCsv() {
+    try {
+      const { csv, counts } = await buildBackupCsv(db);
+      if (counts.logs + counts.goals + counts.notes === 0) {
+        Alert.alert(strings.backupTitle, strings.backupNothing);
+        return;
+      }
+      const file = new File(Paths.cache, `workout-log-backup-${todayString()}.csv`);
+      if (file.exists) file.delete();
+      file.create();
+      file.write(csv);
+      await Sharing.shareAsync(file.uri, {
+        mimeType: 'text/csv',
+        UTI: 'public.comma-separated-values-text',
+        dialogTitle: strings.backupExport,
+      });
+    } catch {
+      Alert.alert(strings.exportFailedTitle, strings.exportFailedMessage);
+    }
+  }
+
+  async function importCsv() {
+    let parsed: ReturnType<typeof parseBackupCsv>;
+    try {
+      const picked = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
+      if (picked.canceled) return;
+      const text = await new File(picked.assets[0].uri).text();
+      parsed = parseBackupCsv(text);
+    } catch {
+      Alert.alert(strings.importFailedTitle, strings.importInvalidMessage);
+      return;
+    }
+    Alert.alert(
+      strings.importConfirmTitle,
+      strings.importConfirmMessage(parsed.logs.length, parsed.goals.length, parsed.notes.length),
+      [
+        { text: strings.cancel, style: 'cancel' },
+        {
+          text: strings.importAction,
+          onPress: async () => {
+            try {
+              const counts = await importBackup(db, parsed);
+              await load();
+              Alert.alert(strings.importDoneTitle, strings.importDoneMessage(counts.logs));
+            } catch {
+              Alert.alert(strings.importFailedTitle, strings.importInvalidMessage);
+            }
+          },
+        },
+      ]
+    );
+  }
 }
 
 // 이번 달 1일~말일을 한 줄 히트맵으로 (많이 한 날일수록 진하게)
@@ -325,6 +396,20 @@ const styles = StyleSheet.create({
   chipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { color: colors.text, fontSize: 13 },
   chipTextSelected: { color: '#fff', fontWeight: '600' },
+  backupRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  backupButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  backupButtonSecondary: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  backupButtonText: { color: colors.text, fontSize: 14, fontWeight: '600' },
   monthStrip: { flexDirection: 'row', gap: 3, flexWrap: 'wrap' },
   monthCell: {
     flexGrow: 1,

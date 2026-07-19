@@ -37,7 +37,8 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 220
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }

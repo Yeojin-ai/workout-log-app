@@ -82,6 +82,22 @@ const ko = {
     `${month}월 ${day}일 (${WEEKDAYS_KO[weekday]})`,
   formatDateLong: (year: number, month: number, day: number, weekday: number) =>
     `${year}년 ${month}월 ${day}일 (${WEEKDAYS_KO[weekday]})`,
+
+  backupTitle: '데이터 백업',
+  backupHint: '모든 기록을 CSV 파일로 내보내 보관하고, 그 파일로 언제든 복원할 수 있어요.',
+  backupExport: 'CSV 내보내기',
+  backupImport: 'CSV 불러오기',
+  backupNothing: '내보낼 기록이 없어요.',
+  exportFailedTitle: '내보내기 실패',
+  exportFailedMessage: 'CSV 파일을 만들지 못했어요. 다시 시도해 주세요.',
+  importConfirmTitle: 'CSV 불러오기',
+  importConfirmMessage: (logs: number, goals: number, notes: number) =>
+    `세트 ${logs}개, 목표 ${goals}개, 메모 ${notes}개를 불러와요.\n파일에 있는 날짜의 기존 기록은 파일 내용으로 바뀌어요.`,
+  importAction: '불러오기',
+  importDoneTitle: '복원 완료',
+  importDoneMessage: (logs: number) => `세트 ${logs}개를 복원했어요.`,
+  importFailedTitle: '불러오기 실패',
+  importInvalidMessage: '올바른 백업 CSV 파일이 아니에요.',
 };
 
 const en: typeof ko = {
@@ -157,6 +173,22 @@ const en: typeof ko = {
   formatDateShort: (month, day, weekday) => `${MONTHS_EN[month - 1]} ${day} (${WEEKDAYS_EN[weekday]})`,
   formatDateLong: (year, month, day, weekday) =>
     `${MONTHS_EN[month - 1]} ${day}, ${year} (${WEEKDAYS_EN[weekday]})`,
+
+  backupTitle: 'Data Backup',
+  backupHint: 'Export every log to a CSV file for safekeeping, and restore from it anytime.',
+  backupExport: 'Export CSV',
+  backupImport: 'Import CSV',
+  backupNothing: 'Nothing to export yet.',
+  exportFailedTitle: 'Export failed',
+  exportFailedMessage: "Couldn't create the CSV file. Please try again.",
+  importConfirmTitle: 'Import CSV',
+  importConfirmMessage: (logs, goals, notes) =>
+    `Importing ${logs} sets, ${goals} goals and ${notes} notes.\nExisting records on dates in the file will be replaced.`,
+  importAction: 'Import',
+  importDoneTitle: 'Restore complete',
+  importDoneMessage: (logs) => `Restored ${logs} sets.`,
+  importFailedTitle: 'Import failed',
+  importInvalidMessage: "This doesn't look like a valid backup CSV file.",
 };
 
 export const strings = isKorean ? ko : en;
