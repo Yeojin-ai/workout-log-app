@@ -121,11 +121,17 @@ list. Set grouping/rendering shared by the today and history screens lives in
 
 ### App icon
 
-The launcher/app icon is a neon "졸라맨" stick figure in the max-state hero pose (arms up, headband,
-dumbbells) on a dark background — deliberately the same figure as the Stats avatar's `GOAL_STATE`.
-It's generated from code, not hand-drawn: [scripts/gen-icon.js](scripts/gen-icon.js) builds the SVG
-and renders every PNG variant (`icon.png`, adaptive `android-icon-foreground/background/monochrome`,
-`favicon`, `splash-icon`) via `sharp`. Regenerate with `node scripts/gen-icon.js` (needs
+The launcher/app icon is a cute muscular purple buddy holding dumbbells — user-provided artwork at
+[assets/workout-log-icon.png](assets/workout-log-icon.png) (1024px, opaque **black** background
+baked in; don't confuse it with the generated `icon.png`). [scripts/gen-icon.js](scripts/gen-icon.js)
+processes that source into every PNG variant via `sharp`: it erases a ✨ artifact in the bottom-right
+corner, luma-keys the black background out to get a transparent figure (for `splash-icon.png` and,
+recolored white, `android-icon-monochrome.png`), shrinks the figure to the adaptive-icon safe zone
+for `android-icon-foreground.png`, and uses the cleaned original as full-bleed `icon.png`/`favicon`.
+Because the source bakes in pure black, the adaptive `backgroundColor`/background image are
+`#000000` (not the app's `#0B0B0F`). `splash-icon.png` must stay transparent (Android 12+ masks the
+splash image to a circle, so a baked-in dark square shows as a dark disc); the full-screen splash
+background color comes from the `expo-splash-screen` plugin config in app.json instead. Regenerate with `node scripts/gen-icon.js` (needs
 `npm i --no-save sharp`), then `npx expo prebuild --platform android --no-install` to push the PNGs
 into `android/`. A future idea (deferred): swap among per-stage icons via `activity-alias` so the
 launcher icon tracks the avatar's condition — the OS can't redraw an icon live, only switch between
