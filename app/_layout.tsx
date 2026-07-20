@@ -4,19 +4,19 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { DATABASE_NAME, migrateDb } from '../lib/db';
 import { strings } from '../lib/i18n';
-import { LanguageProvider } from '../lib/language';
+import { SettingsProvider } from '../lib/settings';
 import { colors } from '../constants/colors';
 
 export default function RootLayout() {
   return (
-    <LanguageProvider>
-      {(lang) => (
+    <SettingsProvider>
+      {(settingsKey) => (
         <SafeAreaProvider>
-          {/* key={lang}: 언어를 바꾸면 라우터 트리 전체(탭 네비게이터·헤더·모든 화면)가
-              remount되어 교체된 strings를 다시 읽는다. expo-router는 <Stack>에 key를 줘도
-              이미 마운트된 하위 라우트까지 remount하지 않으므로 여기(Provider)에 건다.
+          {/* key={settingsKey}: 언어/단위를 바꾸면 라우터 트리 전체(탭 네비게이터·헤더·모든
+              화면)가 remount되어 교체된 strings·단위를 다시 읽는다. expo-router는 <Stack>에
+              key를 줘도 이미 마운트된 하위 라우트까지 remount하지 않으므로 여기(Provider)에 건다.
               migrateDb는 idempotent라 재실행돼도 안전하다. */}
-          <SQLiteProvider key={lang} databaseName={DATABASE_NAME} onInit={migrateDb}>
+          <SQLiteProvider key={settingsKey} databaseName={DATABASE_NAME} onInit={migrateDb}>
             <Stack
               screenOptions={{
                 headerStyle: { backgroundColor: colors.surface },
@@ -33,6 +33,6 @@ export default function RootLayout() {
           </SQLiteProvider>
         </SafeAreaProvider>
       )}
-    </LanguageProvider>
+    </SettingsProvider>
   );
 }

@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { getLogById, updateLog, deleteLog, type ExerciseLog } from '../../lib/db';
 import { strings } from '../../lib/i18n';
+import { fromKg, toKg, unitLabel, formatWeight } from '../../lib/units';
 import { colors } from '../../constants/colors';
 
 export default function EditLogScreen() {
@@ -23,7 +24,7 @@ export default function EditLogScreen() {
         return;
       }
       setLog(row);
-      setWeight(String(row.weight_kg));
+      setWeight(String(fromKg(row.weight_kg)));
       setReps(String(row.reps));
     });
   }, [db, logId]);
@@ -36,12 +37,12 @@ export default function EditLogScreen() {
     Number.isFinite(weightValue) && weightValue >= 0 && Number.isInteger(repsValue) && repsValue > 0;
 
   const handleSave = async () => {
-    await updateLog(db, logId, { weight_kg: weightValue, reps: repsValue });
+    await updateLog(db, logId, { weight_kg: toKg(weightValue), reps: repsValue });
     router.back();
   };
 
   const handleDelete = () => {
-    Alert.alert(strings.deleteSetTitle, strings.deleteSetMessage(log.exercise_name, log.weight_kg, log.reps), [
+    Alert.alert(strings.deleteSetTitle, strings.deleteSetMessage(log.exercise_name, formatWeight(log.weight_kg), log.reps), [
       { text: strings.cancel, style: 'cancel' },
       {
         text: strings.delete,
@@ -62,7 +63,7 @@ export default function EditLogScreen() {
 
         <View style={styles.row}>
           <View style={styles.field}>
-            <Text style={styles.label}>{strings.weightLabel}</Text>
+            <Text style={styles.label}>{strings.weightLabel(unitLabel())}</Text>
             <TextInput
               style={styles.input}
               keyboardType="decimal-pad"

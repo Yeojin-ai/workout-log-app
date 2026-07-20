@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import Svg, { G, Polyline, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { strings } from '../lib/i18n';
+import { fromKg, unitLabel } from '../lib/units';
 import { colors } from '../constants/colors';
 
 export type SessionStat = { date: string; max_weight: number; total_reps: number; sets: number };
@@ -61,7 +62,7 @@ export function ExerciseChart({ sessions }: { sessions: SessionStat[] }) {
                 <Circle cx={wx} cy={ry} r={4} fill={colors.success} />
                 {/* 횟수 라벨은 점 아래에 둬서 무게 라벨과 겹치지 않게 한다 */}
                 <SvgText x={wx} y={wy - 8} fontSize={10} fill={colors.primary} textAnchor="middle">
-                  {session.max_weight}
+                  {fromKg(session.max_weight)}
                 </SvgText>
                 <SvgText x={wx} y={ry + 16} fontSize={10} fill={colors.success} textAnchor="middle">
                   {session.total_reps}
@@ -83,7 +84,7 @@ export function ExerciseChart({ sessions }: { sessions: SessionStat[] }) {
 
       <View style={styles.legend}>
         <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
-        <Text style={styles.legendText}>{strings.chartWeight}</Text>
+        <Text style={styles.legendText}>{strings.chartWeight(unitLabel())}</Text>
         <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
         <Text style={styles.legendText}>{strings.chartReps}</Text>
       </View>

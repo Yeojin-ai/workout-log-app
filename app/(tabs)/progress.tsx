@@ -7,7 +7,7 @@ import { StorageAccessFramework, writeAsStringAsync } from 'expo-file-system/leg
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { buildBackupCsv, parseBackupCsv, importBackup } from '../../lib/backup';
-import { useLanguage } from '../../lib/language';
+import { useSettings } from '../../lib/settings';
 import {
   getExerciseNamesByFrequency,
   getExerciseSessionStats,
@@ -65,7 +65,7 @@ function daysAgoString(days: number): string {
 
 export default function StatsScreen() {
   const db = useSQLiteContext();
-  const { lang, setLang } = useLanguage();
+  const { unit, setUnit } = useSettings();
   const [stats, setStats] = useState<Stats | null>(null);
   const [avatar, setAvatar] = useState<AvatarState | null>(null);
   const [weakPart, setWeakPart] = useState<MusclePart | null>(null);
@@ -258,21 +258,21 @@ export default function StatsScreen() {
         </View>
       )}
 
-      {/* 언어 선택 */}
+      {/* 무게 단위 */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>{strings.languageTitle}</Text>
+        <Text style={styles.cardTitle}>{strings.unitTitle}</Text>
         <View style={styles.backupRow}>
           <Pressable
-            style={[styles.langButton, lang === 'ko' && styles.langButtonActive]}
-            onPress={() => setLang('ko')}
+            style={[styles.langButton, unit === 'kg' && styles.langButtonActive]}
+            onPress={() => setUnit('kg')}
           >
-            <Text style={[styles.langButtonText, lang === 'ko' && styles.langButtonTextActive]}>한국어</Text>
+            <Text style={[styles.langButtonText, unit === 'kg' && styles.langButtonTextActive]}>kg</Text>
           </Pressable>
           <Pressable
-            style={[styles.langButton, lang === 'en' && styles.langButtonActive]}
-            onPress={() => setLang('en')}
+            style={[styles.langButton, unit === 'lb' && styles.langButtonActive]}
+            onPress={() => setUnit('lb')}
           >
-            <Text style={[styles.langButtonText, lang === 'en' && styles.langButtonTextActive]}>English</Text>
+            <Text style={[styles.langButtonText, unit === 'lb' && styles.langButtonTextActive]}>lb</Text>
           </Pressable>
         </View>
       </View>

@@ -15,6 +15,7 @@ import {
   type ExerciseGoal,
 } from '../../lib/db';
 import { strings } from '../../lib/i18n';
+import { formatWeight } from '../../lib/units';
 import { groupByExercise, ExerciseGroupCard } from '../../components/DayLogList';
 import { QuickAddRow } from '../../components/QuickAddRow';
 import { colors } from '../../constants/colors';
@@ -74,7 +75,7 @@ export default function TodayScreen() {
   };
 
   const handleLongPressSet = (log: ExerciseLog) => {
-    Alert.alert(strings.deleteSetTitle, strings.deleteSetMessage(log.exercise_name, log.weight_kg, log.reps), [
+    Alert.alert(strings.deleteSetTitle, strings.deleteSetMessage(log.exercise_name, formatWeight(log.weight_kg), log.reps), [
       { text: strings.cancel, style: 'cancel' },
       {
         text: strings.delete,
@@ -195,7 +196,7 @@ function GoalCard({
         >
           <Ionicons name="checkmark-circle" size={22} color={colors.success} />
           <Text style={styles.slotLabelDone}>{strings.setIndex(i + 1)}</Text>
-          <Text style={styles.slotDetail}>{strings.setDetail(set.weight_kg, set.reps)}</Text>
+          <Text style={styles.slotDetail}>{strings.setDetail(formatWeight(set.weight_kg), set.reps)}</Text>
         </Pressable>
       );
     } else if (i === sets.length) {

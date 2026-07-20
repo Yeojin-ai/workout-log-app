@@ -15,6 +15,7 @@ import {
   type ExerciseLog,
 } from '../../lib/db';
 import { strings } from '../../lib/i18n';
+import { formatWeight } from '../../lib/units';
 import { groupByExercise, ExerciseGroupCard } from '../../components/DayLogList';
 import { colors } from '../../constants/colors';
 
@@ -80,7 +81,7 @@ export default function TrackingScreen() {
   };
 
   const handleLongPressSet = (log: ExerciseLog) => {
-    Alert.alert(strings.deleteSetTitle, strings.deleteSetMessage(log.exercise_name, log.weight_kg, log.reps), [
+    Alert.alert(strings.deleteSetTitle, strings.deleteSetMessage(log.exercise_name, formatWeight(log.weight_kg), log.reps), [
       { text: strings.cancel, style: 'cancel' },
       {
         text: strings.delete,

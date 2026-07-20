@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { strings } from '../../lib/i18n';
+import { LanguageButton } from '../../components/LanguageButton';
 import { colors } from '../../constants/colors';
 
 export default function TabsLayout() {
@@ -33,6 +34,7 @@ export default function TabsLayout() {
         options={{
           title: strings.tabStats,
           tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" color={color} size={size} />,
+          headerRight: () => <LanguageButton />,
         }}
       />
     </Tabs>

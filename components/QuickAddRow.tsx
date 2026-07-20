@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { strings } from '../lib/i18n';
+import { fromKg, toKg, unitLabel } from '../lib/units';
 import { colors } from '../constants/colors';
 
 // 카드 안에서 바로 세트를 기록하는 입력줄: [무게][횟수][✓]
@@ -15,7 +16,8 @@ export function QuickAddRow({
   initialReps?: number;
   onAdd: (weightKg: number, reps: number) => void;
 }) {
-  const [weight, setWeight] = useState(initialWeight != null ? String(initialWeight) : '');
+  // initialWeight는 kg으로 들어온다 — 현재 단위로 변환해 보여준다.
+  const [weight, setWeight] = useState(initialWeight != null ? String(fromKg(initialWeight)) : '');
   const [reps, setReps] = useState(initialReps != null ? String(initialReps) : '');
 
   // 무게는 비워두면 0(맨몸 운동)으로 저장한다.
@@ -35,7 +37,7 @@ export function QuickAddRow({
         placeholderTextColor={colors.textMuted}
         selectTextOnFocus
       />
-      <Text style={styles.unit}>kg</Text>
+      <Text style={styles.unit}>{unitLabel()}</Text>
       <TextInput
         style={styles.input}
         value={reps}
@@ -49,7 +51,7 @@ export function QuickAddRow({
       <Pressable
         style={[styles.addButton, !canAdd && styles.addButtonDisabled]}
         disabled={!canAdd}
-        onPress={() => onAdd(weightValue, repsValue)}
+        onPress={() => onAdd(toKg(weightValue), repsValue)}
       >
         <Ionicons name="checkmark" size={22} color="#fff" />
       </Pressable>

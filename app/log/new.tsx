@@ -14,6 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { addLog, getRecentExerciseNames, getLastSetForExercise, todayString } from '../../lib/db';
 import { strings } from '../../lib/i18n';
+import { fromKg, toKg, unitLabel } from '../../lib/units';
 import { PRESET_EXERCISES } from '../../constants/exercises';
 import { DateField } from '../../components/DateField';
 import { colors } from '../../constants/colors';
@@ -48,7 +49,7 @@ export default function NewLogScreen() {
     if (!selectedName || savedCount > 0) return;
     getLastSetForExercise(db, selectedName).then((last) => {
       if (!last) return;
-      setWeight(String(last.weight_kg));
+      setWeight(String(fromKg(last.weight_kg)));
       setReps(String(last.reps));
     });
   }, [db, selectedName, savedCount]);
@@ -66,7 +67,7 @@ export default function NewLogScreen() {
       await addLog(db, {
         date,
         exercise_name: selectedName,
-        weight_kg: weightValue,
+        weight_kg: toKg(weightValue),
         reps: repsValue,
       });
       return true;
@@ -133,7 +134,7 @@ export default function NewLogScreen() {
 
         <View style={styles.row}>
           <View style={styles.field}>
-            <Text style={styles.label}>{strings.weightLabel}</Text>
+            <Text style={styles.label}>{strings.weightLabel(unitLabel())}</Text>
             <TextInput
               style={styles.input}
               placeholder="60"

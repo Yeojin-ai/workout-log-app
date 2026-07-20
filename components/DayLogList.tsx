@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import type { ExerciseLog } from '../lib/db';
 import { strings } from '../lib/i18n';
+import { formatWeight } from '../lib/units';
 import { colors } from '../constants/colors';
 
 // 같은 기구의 세트들을 한 카드로 묶어서 보여준다.
@@ -43,7 +44,7 @@ export function ExerciseGroupCard({
           delayLongPress={400}
         >
           <Text style={styles.setIndex}>{strings.setIndex(index + 1)}</Text>
-          <Text style={styles.setDetail}>{strings.setDetail(set.weight_kg, set.reps)}</Text>
+          <Text style={styles.setDetail}>{strings.setDetail(formatWeight(set.weight_kg), set.reps)}</Text>
         </Pressable>
       ))}
       {footer}

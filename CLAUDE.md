@@ -11,11 +11,23 @@ pick a machine/exercise, record weight (kg) and reps per set. **Offline-first by
 lives in an on-device SQLite database (expo-sqlite); there is no backend, no auth, and no network
 dependency. Do not add a server or accounts unless the user asks.
 
-UI is bilingual (Korean/English), chosen once at launch from the device locale — see
-[lib/i18n.ts](lib/i18n.ts). Every user-facing string must go through the `strings` object there
+UI is bilingual (Korean/English). The language defaults to the device locale but is user-selectable
+in-app via the flag pill in the Stats header ([components/LanguageButton.tsx](components/LanguageButton.tsx))
+— see [lib/i18n.ts](lib/i18n.ts). Every user-facing string must go through the `strings` object there
 (both `ko` and `en` variants; the `en` object is typed `typeof ko` so a missing key is a compile
-error). Exercise presets are also localized in [constants/exercises.ts](constants/exercises.ts).
-Never hardcode UI text in a screen. App display name is "Workout Log".
+error). `strings` is a **reassignable** `let` export: `setLanguage()` swaps it and persists the choice
+to a small file (read synchronously at startup, independent of the DB). Screens don't subscribe to it;
+instead [lib/settings.tsx](lib/settings.tsx)'s `SettingsProvider` drives a remount key (`${lang}-${unit}`)
+on the `SQLiteProvider` in [app/_layout.tsx](app/_layout.tsx), so changing language OR weight unit
+remounts the whole router tree and every screen re-reads the current values. Exercise presets are also
+localized in [constants/exercises.ts](constants/exercises.ts). Never hardcode UI text in a screen.
+App display name is "Workout Log".
+
+Weight is always **stored in kg** (`weight_kg`); the display/input unit (kg or lb, toggled on the Stats
+tab, persisted like language) is applied only at the UI boundary via [lib/units.ts](lib/units.ts):
+`fromKg`/`formatWeight` for display and prefills, `toKg` for saving input, `unitLabel()` for labels.
+Volume/lifetime totals stay in kg regardless of the chosen unit. When showing a set weight, pass
+`formatWeight(weight_kg)` into `strings.setDetail`/`deleteSetMessage` rather than the raw number.
 
 There is no web or desktop target — do not add `react-dom`/`react-native-web` unless asked.
 
@@ -138,6 +150,8 @@ users before 9am.
      (e.g. Download/WorkoutLog) once and later exports save there silently. Share-sheet export
      (expo-sharing) remains only as the non-Android fallback; sharing straight to KakaoTalk pastes
      the CSV as text, which is why we save to disk instead.
+  6. **Weight unit card** (kg/lb) — see [lib/units.ts](lib/units.ts) note above. The Stats header also
+     carries the language flag pill (top-right, opens a picker popup).
 - `app/log/edit.tsx?id=` — modal for editing/deleting a single set (weight + reps).
 
 Empty weight saves as 0 (bodyweight exercises). Set rows everywhere: **tap = edit modal, long-press

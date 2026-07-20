@@ -58,7 +58,7 @@ const ko = {
   monthTitle: (year: number, month: number) => `${year}년 ${month}월`,
   weekdaysShort: WEEKDAYS_KO,
   selectExerciseHint: '종목을 탭하면 그래프가 보여요',
-  chartWeight: '최고 무게(kg)',
+  chartWeight: (unit: string) => `최고 무게(${unit})`,
   chartReps: '총 횟수',
   exerciseChartSection: '종목별 그래프',
   noChartData: '아직 이 종목의 기록이 없어요.',
@@ -83,14 +83,14 @@ const ko = {
   dateLabel: '날짜',
   today: '오늘',
   deleteSetTitle: '세트 삭제',
-  deleteSetMessage: (name: string, weight: number, reps: number) =>
-    `${name} ${weight}kg × ${reps}회 기록을 삭제할까요?`,
+  deleteSetMessage: (name: string, weightStr: string, reps: number) =>
+    `${name} ${weightStr} × ${reps}회 기록을 삭제할까요?`,
   cancel: '취소',
   delete: '삭제',
 
   exerciseLabel: '운동 기구',
   customExercisePlaceholder: '목록에 없으면 직접 입력',
-  weightLabel: '중량 (kg)',
+  weightLabel: (unit: string) => `중량 (${unit})`,
   repsLabel: '횟수',
   savedSets: (name: string, count: number) => `✓ ${name} ${count}세트 저장됨`,
   saveAndNext: '저장하고 다음 세트',
@@ -100,7 +100,7 @@ const ko = {
 
   emptyHistory: '아직 기록이 없어요.',
   setIndex: (n: number) => `${n}세트`,
-  setDetail: (weight: number, reps: number) => `${weight}kg × ${reps}회`,
+  setDetail: (weightStr: string, reps: number) => `${weightStr} × ${reps}회`,
 
   statWorkoutDays: '운동한 날',
   statStreak: '연속 기록',
@@ -116,6 +116,7 @@ const ko = {
     `${year}년 ${month}월 ${day}일 (${WEEKDAYS_KO[weekday]})`,
 
   languageTitle: '언어',
+  unitTitle: '무게 단위',
   backupTitle: '데이터 백업',
   backupHint: '모든 기록을 CSV 파일로 내보내 보관하고, 그 파일로 언제든 복원할 수 있어요.',
   backupExport: 'CSV 내보내기',
@@ -154,7 +155,7 @@ const en: typeof ko = {
   monthTitle: (year, month) => `${MONTHS_EN[month - 1]} ${year}`,
   weekdaysShort: WEEKDAYS_EN,
   selectExerciseHint: 'Tap an exercise to see its chart',
-  chartWeight: 'Top weight (kg)',
+  chartWeight: (unit) => `Top weight (${unit})`,
   chartReps: 'Total reps',
   exerciseChartSection: 'Exercise Charts',
   noChartData: 'No sets logged for this exercise yet.',
@@ -179,13 +180,13 @@ const en: typeof ko = {
   dateLabel: 'Date',
   today: 'Today',
   deleteSetTitle: 'Delete set',
-  deleteSetMessage: (name, weight, reps) => `Delete ${name} ${weight}kg × ${reps} reps?`,
+  deleteSetMessage: (name, weightStr, reps) => `Delete ${name} ${weightStr} × ${reps} reps?`,
   cancel: 'Cancel',
   delete: 'Delete',
 
   exerciseLabel: 'Exercise',
   customExercisePlaceholder: 'Not in the list? Type it here',
-  weightLabel: 'Weight (kg)',
+  weightLabel: (unit) => `Weight (${unit})`,
   repsLabel: 'Reps',
   savedSets: (name, count) => `✓ ${name} — ${count} ${count === 1 ? 'set' : 'sets'} saved`,
   saveAndNext: 'Save & next set',
@@ -195,7 +196,7 @@ const en: typeof ko = {
 
   emptyHistory: 'No logs yet.',
   setIndex: (n) => `Set ${n}`,
-  setDetail: (weight, reps) => `${weight}kg × ${reps} reps`,
+  setDetail: (weightStr, reps) => `${weightStr} × ${reps} reps`,
 
   statWorkoutDays: 'Workout days',
   statStreak: 'Current streak',
@@ -210,6 +211,7 @@ const en: typeof ko = {
     `${MONTHS_EN[month - 1]} ${day}, ${year} (${WEEKDAYS_EN[weekday]})`,
 
   languageTitle: 'Language',
+  unitTitle: 'Weight unit',
   backupTitle: 'Data Backup',
   backupHint: 'Export every log to a CSV file for safekeeping, and restore from it anytime.',
   backupExport: 'Export CSV',
