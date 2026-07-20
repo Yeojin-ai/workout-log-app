@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, Pressable, Modal, TextInput, FlatList, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSQLiteContext } from 'expo-sqlite';
 import {
@@ -116,86 +117,87 @@ export function ExercisePicker({ value, onSelect }: { value: string; onSelect: (
         <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
       </Pressable>
 
-      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <Pressable style={styles.sheet} onPress={() => {}}>
-            <View style={styles.searchRow}>
-              <Ionicons name="search" size={18} color={colors.textMuted} />
-              <TextInput
-                style={styles.search}
-                placeholder={strings.exerciseSearchPlaceholder}
-                placeholderTextColor={colors.textMuted}
-                value={query}
-                onChangeText={setQuery}
-                autoFocus
-                autoCorrect={false}
-              />
-              <Pressable onPress={() => setOpen(false)} hitSlop={8}>
-                <Ionicons name="close" size={22} color={colors.textMuted} />
-              </Pressable>
-            </View>
-
-            <FlatList
-              data={filtered}
-              keyExtractor={(it) => it.name}
-              keyboardShouldPersistTaps="handled"
-              ListHeaderComponent={
-                showAdd ? (
-                  <Pressable style={styles.addRow} onPress={doAdd}>
-                    <Ionicons name="add-circle" size={20} color={colors.primary} />
-                    <Text style={styles.addText}>{strings.addExerciseNamed(query.trim())}</Text>
-                  </Pressable>
-                ) : null
-              }
-              ListEmptyComponent={
-                !showAdd ? <Text style={styles.empty}>{strings.noExerciseMatch}</Text> : null
-              }
-              renderItem={({ item }) =>
-                editing === item.name ? (
-                  <View style={styles.row}>
-                    <TextInput
-                      style={styles.editInput}
-                      value={editText}
-                      onChangeText={setEditText}
-                      autoFocus
-                      autoCorrect={false}
-                      onSubmitEditing={() => saveEdit(item.name)}
-                    />
-                    <Pressable onPress={() => saveEdit(item.name)} hitSlop={8}>
-                      <Ionicons name="checkmark" size={22} color={colors.success} />
-                    </Pressable>
-                    <Pressable onPress={() => setEditing(null)} hitSlop={8}>
-                      <Ionicons name="close" size={22} color={colors.textMuted} />
-                    </Pressable>
-                  </View>
-                ) : (
-                  <Pressable style={styles.row} onPress={() => choose(item.name)}>
-                    <Text style={styles.rowText} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    {value === item.name && <Ionicons name="checkmark" size={18} color={colors.primary} />}
-                    {item.custom && (
-                      <>
-                        <Pressable
-                          onPress={() => {
-                            setEditing(item.name);
-                            setEditText(item.name);
-                          }}
-                          hitSlop={8}
-                        >
-                          <Ionicons name="pencil" size={18} color={colors.textMuted} />
-                        </Pressable>
-                        <Pressable onPress={() => doDelete(item.name)} hitSlop={8}>
-                          <Ionicons name="trash-outline" size={18} color={colors.danger} />
-                        </Pressable>
-                      </>
-                    )}
-                  </Pressable>
-                )
-              }
+      {/* 전체화면 검색 페이지: 검색창을 상단에 고정해, 키보드가 올라와도 검색어와
+          "추가" 행(리스트 맨 위)은 항상 보이고 아래 리스트만 스크롤된다. */}
+      <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
+        <SafeAreaView style={styles.sheetFull} edges={['top', 'bottom']}>
+          <View style={styles.searchRow}>
+            <Ionicons name="search" size={18} color={colors.textMuted} />
+            <TextInput
+              style={styles.search}
+              placeholder={strings.exerciseSearchPlaceholder}
+              placeholderTextColor={colors.textMuted}
+              value={query}
+              onChangeText={setQuery}
+              autoFocus
+              autoCorrect={false}
             />
-          </Pressable>
-        </Pressable>
+            <Pressable onPress={() => setOpen(false)} hitSlop={8}>
+              <Ionicons name="close" size={24} color={colors.textMuted} />
+            </Pressable>
+          </View>
+
+          <FlatList
+            data={filtered}
+            keyExtractor={(it) => it.name}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
+            ListHeaderComponent={
+              showAdd ? (
+                <Pressable style={styles.addRow} onPress={doAdd}>
+                  <Ionicons name="add-circle" size={20} color={colors.primary} />
+                  <Text style={styles.addText}>{strings.addExerciseNamed(query.trim())}</Text>
+                </Pressable>
+              ) : null
+            }
+            ListEmptyComponent={
+              !showAdd ? <Text style={styles.empty}>{strings.noExerciseMatch}</Text> : null
+            }
+            renderItem={({ item }) =>
+              editing === item.name ? (
+                <View style={styles.row}>
+                  <TextInput
+                    style={styles.editInput}
+                    value={editText}
+                    onChangeText={setEditText}
+                    autoFocus
+                    autoCorrect={false}
+                    onSubmitEditing={() => saveEdit(item.name)}
+                  />
+                  <Pressable onPress={() => saveEdit(item.name)} hitSlop={8}>
+                    <Ionicons name="checkmark" size={22} color={colors.success} />
+                  </Pressable>
+                  <Pressable onPress={() => setEditing(null)} hitSlop={8}>
+                    <Ionicons name="close" size={22} color={colors.textMuted} />
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable style={styles.row} onPress={() => choose(item.name)}>
+                  <Text style={styles.rowText} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  {value === item.name && <Ionicons name="checkmark" size={18} color={colors.primary} />}
+                  {item.custom && (
+                    <>
+                      <Pressable
+                        onPress={() => {
+                          setEditing(item.name);
+                          setEditText(item.name);
+                        }}
+                        hitSlop={8}
+                      >
+                        <Ionicons name="pencil" size={18} color={colors.textMuted} />
+                      </Pressable>
+                      <Pressable onPress={() => doDelete(item.name)} hitSlop={8}>
+                        <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                      </Pressable>
+                    </>
+                  )}
+                </Pressable>
+              )
+            }
+          />
+        </SafeAreaView>
       </Modal>
     </>
   );
@@ -215,16 +217,7 @@ const styles = StyleSheet.create({
   },
   fieldText: { color: colors.text, fontSize: 16, flex: 1 },
   fieldPlaceholder: { color: colors.textMuted, fontSize: 16, flex: 1 },
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingTop: 8,
-    maxHeight: '85%',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
+  sheetFull: { flex: 1, backgroundColor: colors.background },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -130,8 +130,9 @@ users before 9am.
   picker is capped at today).
 
   Both `log/goal.tsx` and `log/new.tsx` pick the exercise via [components/ExercisePicker.tsx](components/ExercisePicker.tsx):
-  a field that opens a search sheet listing the catalog (recently-used first, then the rest A–Z),
-  filterable by substring, with a "+ add" row when the query matches nothing. The catalog is
+  a field that opens a **full-screen search page** (search bar pinned at the top via a `SafeAreaView`
+  Modal, so the soft keyboard never hides the query or the add row) listing the catalog (recently-used
+  first, then the rest A–Z), filterable by substring, with a "+ add" row when the query matches nothing. The catalog is
   `PRESET_EXERCISES` ∪ names from `exercise_logs` (recency) ∪ the `custom_exercises` table. Only
   `custom_exercises` entries are editable/deletable (inline rename + trash), since presets are fixed;
   renaming cascades to `exercise_logs`/`exercise_goals` (see `renameCustomExercise`), and delete
