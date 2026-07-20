@@ -58,6 +58,26 @@ First build takes ~10 min; cached rebuilds are much faster. Adding an Expo nativ
 autolinking, so prebuild + rebuild is required (JS-only changes still need a rebuild to refresh the
 embedded bundle).
 
+### iOS builds
+
+There is **no Mac/Xcode in this environment**, so an installable iOS build cannot be produced here —
+iOS binaries must be compiled on macOS. The project is otherwise iOS-ready: `ios.bundleIdentifier`
+is set in app.json, `eas.json` has build profiles, and `npx expo export --platform ios` bundles
+cleanly. Options for the user, in order of cost:
+
+- **Expo Go (free, no build, dev only):** install Expo Go on the iPhone, run `npm start`, scan the
+  QR (phone + Metro host on the same network). Every native module we use (expo-sqlite,
+  expo-file-system, expo-sharing, expo-document-picker) ships in the Expo SDK, so the app runs fully
+  in Expo Go — but only while the dev server is up; it is not a standalone install.
+- **EAS Build (cloud, standalone .ipa, no Mac needed):** `npm i -g eas-cli && eas login && eas build
+  -p ios --profile preview`. EAS compiles on its own macOS workers. **Requires a paid Apple Developer
+  Program membership ($99/yr)** to sign for device install (internal distribution registers the
+  iPhone's UDID, or use TestFlight). A free Apple ID can only sign via Xcode's personal team, which
+  needs a Mac and gives 7-day certs.
+
+So: on-device standalone install ⇒ Apple Developer account is the hard requirement; Expo Go is the
+only zero-cost, no-Mac path and is fine for trying the app.
+
 ## Architecture
 
 **Storage** is four SQLite tables owned by [lib/db.ts](lib/db.ts): `exercise_logs` (one row per set:
