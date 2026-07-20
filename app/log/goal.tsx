@@ -12,10 +12,10 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { setGoal, getRecentExerciseNames, getLastGoalTarget, todayString } from '../../lib/db';
+import { setGoal, getLastGoalTarget, todayString } from '../../lib/db';
 import { strings } from '../../lib/i18n';
-import { PRESET_EXERCISES } from '../../constants/exercises';
 import { DateField } from '../../components/DateField';
+import { ExercisePicker } from '../../components/ExercisePicker';
 import { colors } from '../../constants/colors';
 
 export default function GoalScreen() {
@@ -23,17 +23,9 @@ export default function GoalScreen() {
   const router = useRouter();
   const [date, setDate] = useState(todayString());
   const [exerciseName, setExerciseName] = useState('');
-  const [customName, setCustomName] = useState('');
   const [targetSets, setTargetSets] = useState('');
-  const [recentNames, setRecentNames] = useState<string[]>([]);
 
-  useEffect(() => {
-    getRecentExerciseNames(db).then((rows) => setRecentNames(rows.map((row) => row.exercise_name)));
-  }, [db]);
-
-  const chipNames = [...recentNames, ...PRESET_EXERCISES.filter((name) => !recentNames.includes(name))];
-
-  const selectedName = customName.trim() || exerciseName;
+  const selectedName = exerciseName;
 
   // 운동을 고르면 지난번 목표 세트 수를 기본값으로 채운다.
   useEffect(() => {
@@ -65,31 +57,7 @@ export default function GoalScreen() {
         <DateField value={date} onChange={setDate} />
 
         <Text style={styles.label}>{strings.exerciseLabel}</Text>
-        <View style={styles.chipWrap}>
-          {chipNames.map((name) => {
-            const isSelected = exerciseName === name && !customName.trim();
-            return (
-              <Pressable
-                key={name}
-                style={[styles.chip, isSelected && styles.chipSelected]}
-                onPress={() => {
-                  setExerciseName(name);
-                  setCustomName('');
-                }}
-              >
-                <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{name}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <TextInput
-          style={styles.input}
-          placeholder={strings.customExercisePlaceholder}
-          placeholderTextColor={colors.textMuted}
-          value={customName}
-          onChangeText={setCustomName}
-        />
+        <ExercisePicker value={exerciseName} onSelect={setExerciseName} />
 
         <Text style={styles.label}>{strings.targetSetsLabel}</Text>
         <TextInput

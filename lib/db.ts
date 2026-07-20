@@ -55,6 +55,11 @@ export async function migrateDb(db: SQLiteDatabase) {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS custom_exercises (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+    );
   `);
   // 세트별 무게 단위 컬럼 (기존 설치본에는 없으므로 없을 때만 추가 — migrateDb는 매 실행 idempotent).
   const cols = await db.getAllAsync<{ name: string }>('PRAGMA table_info(exercise_logs)');
@@ -251,4 +256,39 @@ export function getRecentExerciseNames(db: SQLiteDatabase, limit = 12) {
      ORDER BY last_used DESC LIMIT ?`,
     limit
   );
+}
+
+// ── 운동 기구 카탈로그 (검색 피커용) ──
+// 최근 쓴 순서 전체 (제한 없음)
+export function getAllExerciseNamesByRecency(db: SQLiteDatabase) {
+  return db.getAllAsync<{ exercise_name: string }>(
+    `SELECT exercise_name, MAX(created_at) AS last_used
+     FROM exercise_logs GROUP BY exercise_name ORDER BY last_used DESC`
+  );
+}
+
+// 사용자가 직접 추가한 기구(수정/삭제 대상)
+export function getCustomExercises(db: SQLiteDatabase) {
+  return db.getAllAsync<{ id: number; name: string }>(
+    'SELECT id, name FROM custom_exercises ORDER BY name COLLATE NOCASE ASC'
+  );
+}
+
+export function addCustomExercise(db: SQLiteDatabase, name: string) {
+  return db.runAsync('INSERT OR IGNORE INTO custom_exercises (name) VALUES (?)', name.trim());
+}
+
+// 커스텀 기구 이름 변경 — 기존 기록/목표의 이름도 함께 바꿔 링크를 유지한다.
+export async function renameCustomExercise(db: SQLiteDatabase, oldName: string, newName: string) {
+  const next = newName.trim();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('UPDATE custom_exercises SET name = ? WHERE name = ?', next, oldName);
+    await db.runAsync('UPDATE exercise_logs SET exercise_name = ? WHERE exercise_name = ?', next, oldName);
+    await db.runAsync('UPDATE exercise_goals SET exercise_name = ? WHERE exercise_name = ?', next, oldName);
+  });
+}
+
+// 카탈로그에서만 제거 — 과거 기록(exercise_logs)은 남긴다.
+export function deleteCustomExercise(db: SQLiteDatabase, name: string) {
+  return db.runAsync('DELETE FROM custom_exercises WHERE name = ?', name);
 }

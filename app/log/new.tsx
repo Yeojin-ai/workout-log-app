@@ -12,11 +12,11 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { addLog, getRecentExerciseNames, getLastSetForExercise, todayString } from '../../lib/db';
+import { addLog, getLastSetForExercise, todayString } from '../../lib/db';
 import { strings } from '../../lib/i18n';
 import { fromKg, toKg, getDefaultUnit, setDefaultUnit, type Unit } from '../../lib/units';
-import { PRESET_EXERCISES } from '../../constants/exercises';
 import { DateField } from '../../components/DateField';
+import { ExercisePicker } from '../../components/ExercisePicker';
 import { colors } from '../../constants/colors';
 
 export default function NewLogScreen() {
@@ -28,22 +28,12 @@ export default function NewLogScreen() {
 
   const [date, setDate] = useState(typeof params.date === 'string' ? params.date : todayString());
   const [exerciseName, setExerciseName] = useState(fixedExercise ?? '');
-  const [customName, setCustomName] = useState('');
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
   const [unit, setUnit] = useState<Unit>(getDefaultUnit());
-  const [recentNames, setRecentNames] = useState<string[]>([]);
   const [savedCount, setSavedCount] = useState(0);
 
-  useEffect(() => {
-    if (fixedExercise) return;
-    getRecentExerciseNames(db).then((rows) => setRecentNames(rows.map((row) => row.exercise_name)));
-  }, [db, fixedExercise]);
-
-  // 최근 사용한 기구를 앞에, 나머지 프리셋을 뒤에 붙인다 (중복 제거).
-  const chipNames = [...recentNames, ...PRESET_EXERCISES.filter((name) => !recentNames.includes(name))];
-
-  const selectedName = fixedExercise ?? (customName.trim() || exerciseName);
+  const selectedName = fixedExercise ?? exerciseName;
 
   // 운동을 고르면 그 운동의 직전 무게/횟수를 자동으로 채운다 (아직 세트를 저장하기 전에만).
   useEffect(() => {
@@ -114,33 +104,7 @@ export default function NewLogScreen() {
             <Text style={styles.fixedExerciseText}>{fixedExercise}</Text>
           </View>
         ) : (
-          <>
-            <View style={styles.chipWrap}>
-              {chipNames.map((name) => {
-                const isSelected = exerciseName === name && !customName.trim();
-                return (
-                  <Pressable
-                    key={name}
-                    style={[styles.chip, isSelected && styles.chipSelected]}
-                    onPress={() => {
-                      setExerciseName(name);
-                      setCustomName('');
-                    }}
-                  >
-                    <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>{name}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            <TextInput
-              style={styles.input}
-              placeholder={strings.customExercisePlaceholder}
-              placeholderTextColor={colors.textMuted}
-              value={customName}
-              onChangeText={setCustomName}
-            />
-          </>
+          <ExercisePicker value={exerciseName} onSelect={setExerciseName} />
         )}
 
         <View style={styles.row}>
