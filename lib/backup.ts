@@ -1,17 +1,19 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import type { Unit } from './units';
 
 // CSV 백업/복원. 한 파일에 세 테이블을 담기 위해 첫 컬럼 type으로 행 종류를 구분한다:
-//   log  → date, exercise, weight_kg, reps, created_at
+//   log  → date, exercise, weight_kg, reps, unit, created_at
 //   goal → date, exercise, target_sets
 //   note → date, note, cardio
 // 복원은 "파일에 등장하는 날짜의 기존 행을 지우고 파일 내용으로 대체"라서 재실행해도 안전하다.
+// weight_kg는 항상 kg, unit은 표시 단위. 예전(unit 컬럼 없는) 백업은 kg으로 읽는다.
 
-const HEADER = ['type', 'date', 'exercise', 'weight_kg', 'reps', 'target_sets', 'note', 'cardio', 'created_at'];
+const HEADER = ['type', 'date', 'exercise', 'weight_kg', 'reps', 'unit', 'target_sets', 'note', 'cardio', 'created_at'];
 
 export type BackupCounts = { logs: number; goals: number; notes: number };
 
 export type ParsedBackup = {
-  logs: { date: string; exercise_name: string; weight_kg: number; reps: number; created_at: string | null }[];
+  logs: { date: string; exercise_name: string; weight_kg: number; reps: number; unit: Unit; created_at: string | null }[];
   goals: { date: string; exercise_name: string; target_sets: number }[];
   notes: { date: string; note: string; cardio: string }[];
 };
@@ -26,8 +28,8 @@ function csvLine(fields: (string | number | null)[]): string {
 
 export async function buildBackupCsv(db: SQLiteDatabase): Promise<{ csv: string; counts: BackupCounts }> {
   const logs = await db.getAllAsync<{
-    date: string; exercise_name: string; weight_kg: number; reps: number; created_at: string;
-  }>('SELECT date, exercise_name, weight_kg, reps, created_at FROM exercise_logs ORDER BY date ASC, created_at ASC, id ASC');
+    date: string; exercise_name: string; weight_kg: number; reps: number; unit: string; created_at: string;
+  }>('SELECT date, exercise_name, weight_kg, reps, unit, created_at FROM exercise_logs ORDER BY date ASC, created_at ASC, id ASC');
   const goals = await db.getAllAsync<{ date: string; exercise_name: string; target_sets: number }>(
     'SELECT date, exercise_name, target_sets FROM exercise_goals ORDER BY date ASC, id ASC'
   );
@@ -36,9 +38,9 @@ export async function buildBackupCsv(db: SQLiteDatabase): Promise<{ csv: string;
   );
 
   const lines = [HEADER.join(',')];
-  for (const l of logs) lines.push(csvLine(['log', l.date, l.exercise_name, l.weight_kg, l.reps, '', '', '', l.created_at]));
-  for (const g of goals) lines.push(csvLine(['goal', g.date, g.exercise_name, '', '', g.target_sets, '', '', '']));
-  for (const n of notes) lines.push(csvLine(['note', n.date, '', '', '', '', n.note, n.cardio, '']));
+  for (const l of logs) lines.push(csvLine(['log', l.date, l.exercise_name, l.weight_kg, l.reps, l.unit, '', '', '', l.created_at]));
+  for (const g of goals) lines.push(csvLine(['goal', g.date, g.exercise_name, '', '', '', g.target_sets, '', '', '']));
+  for (const n of notes) lines.push(csvLine(['note', n.date, '', '', '', '', '', n.note, n.cardio, '']));
 
   return {
     // BOM을 붙여야 Excel이 한글을 UTF-8로 읽는다
@@ -105,11 +107,14 @@ export function parseBackupCsv(text: string): ParsedBackup {
       if (!exercise || !Number.isFinite(weight) || !Number.isInteger(reps) || reps <= 0) {
         throw new Error(`row ${r + 1}: bad log row`);
       }
+      const rawUnit = col(row, 'unit').toLowerCase();
+      const unit: Unit = rawUnit === 'lb' ? 'lb' : 'kg'; // 예전 백업엔 unit 컬럼이 없음 → kg
       parsed.logs.push({
         date,
         exercise_name: exercise,
         weight_kg: weight,
         reps,
+        unit,
         created_at: col(row, 'created_at') || null,
       });
     } else if (type === 'goal') {
@@ -138,13 +143,13 @@ export async function importBackup(db: SQLiteDatabase, parsed: ParsedBackup): Pr
     for (const l of parsed.logs) {
       if (l.created_at) {
         await db.runAsync(
-          'INSERT INTO exercise_logs (date, exercise_name, weight_kg, reps, created_at) VALUES (?, ?, ?, ?, ?)',
-          l.date, l.exercise_name, l.weight_kg, l.reps, l.created_at
+          'INSERT INTO exercise_logs (date, exercise_name, weight_kg, reps, unit, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+          l.date, l.exercise_name, l.weight_kg, l.reps, l.unit, l.created_at
         );
       } else {
         await db.runAsync(
-          'INSERT INTO exercise_logs (date, exercise_name, weight_kg, reps) VALUES (?, ?, ?, ?)',
-          l.date, l.exercise_name, l.weight_kg, l.reps
+          'INSERT INTO exercise_logs (date, exercise_name, weight_kg, reps, unit) VALUES (?, ?, ?, ?, ?)',
+          l.date, l.exercise_name, l.weight_kg, l.reps, l.unit
         );
       }
     }

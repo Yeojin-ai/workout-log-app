@@ -15,19 +15,23 @@ UI is bilingual (Korean/English). The language defaults to the device locale but
 in-app via the flag pill in the Stats header ([components/LanguageButton.tsx](components/LanguageButton.tsx))
 — see [lib/i18n.ts](lib/i18n.ts). Every user-facing string must go through the `strings` object there
 (both `ko` and `en` variants; the `en` object is typed `typeof ko` so a missing key is a compile
-error). `strings` is a **reassignable** `let` export: `setLanguage()` swaps it and persists the choice
-to a small file (read synchronously at startup, independent of the DB). Screens don't subscribe to it;
-instead [lib/settings.tsx](lib/settings.tsx)'s `SettingsProvider` drives a remount key (`${lang}-${unit}`)
-on the `SQLiteProvider` in [app/_layout.tsx](app/_layout.tsx), so changing language OR weight unit
-remounts the whole router tree and every screen re-reads the current values. Exercise presets are also
-localized in [constants/exercises.ts](constants/exercises.ts). Never hardcode UI text in a screen.
-App display name is "Workout Log".
+error). `strings` is a `let` export that `setLanguage()` reassigns; it also persists the choice to a
+small file (read synchronously at startup, independent of the DB). Changing the language calls
+`Updates.reloadAsync()` (expo-updates) to **restart the app** — a clean splash→relaunch that reads the
+new language, rather than an in-place remount (which jarringly reset the user to the Today tab). Exercise
+presets are also localized in [constants/exercises.ts](constants/exercises.ts). Never hardcode UI text
+in a screen. App display name is "Workout Log".
 
-Weight is always **stored in kg** (`weight_kg`); the display/input unit (kg or lb, toggled on the Stats
-tab, persisted like language) is applied only at the UI boundary via [lib/units.ts](lib/units.ts):
-`fromKg`/`formatWeight` for display and prefills, `toKg` for saving input, `unitLabel()` for labels.
-Volume/lifetime totals stay in kg regardless of the chosen unit. When showing a set weight, pass
-`formatWeight(weight_kg)` into `strings.setDetail`/`deleteSetMessage` rather than the raw number.
+Weight is always **stored in kg** (`weight_kg`), but the unit is chosen **per set** at logging time via
+an inline `kg/lb` toggle in the input row (`[weight][kg|lb][reps]회`) — not a global setting. Each set
+stores its display unit in `exercise_logs.unit` (added by an idempotent `ALTER TABLE` in `migrateDb`;
+old CSV backups without the column import as `kg`). [lib/units.ts](lib/units.ts) does the boundary
+conversion: `fromKg(kg, unit)`/`formatWeight(kg, unit)` for display & prefills, `toKg(value, unit)` for
+saving, and `getDefaultUnit`/`setDefaultUnit` (file-backed) seed the toggle when a brand-new exercise
+has no prior set. The toggle converts the entered value in place (100lb ↔ 45.36kg). The input default
+comes from that exercise's most recent set's unit; the chart shows an exercise in its latest set's unit.
+Volume/lifetime totals stay in **kg** regardless. When showing a set weight, pass
+`formatWeight(set.weight_kg, set.unit)` into `strings.setDetail`/`deleteSetMessage`, not the raw number.
 
 There is no web or desktop target — do not add `react-dom`/`react-native-web` unless asked.
 
@@ -150,8 +154,9 @@ users before 9am.
      (e.g. Download/WorkoutLog) once and later exports save there silently. Share-sheet export
      (expo-sharing) remains only as the non-Android fallback; sharing straight to KakaoTalk pastes
      the CSV as text, which is why we save to disk instead.
-  6. **Weight unit card** (kg/lb) — see [lib/units.ts](lib/units.ts) note above. The Stats header also
-     carries the language flag pill (top-right, opens a picker popup).
+  The Stats header carries the language flag pill (top-right, opens a picker popup that restarts the
+  app in the chosen language). Weight unit is not set here — it's chosen per set at logging time (see
+  the weight note above).
 - `app/log/edit.tsx?id=` — modal for editing/deleting a single set (weight + reps).
 
 Empty weight saves as 0 (bodyweight exercises). Set rows everywhere: **tap = edit modal, long-press

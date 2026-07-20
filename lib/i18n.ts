@@ -90,7 +90,7 @@ const ko = {
 
   exerciseLabel: '운동 기구',
   customExercisePlaceholder: '목록에 없으면 직접 입력',
-  weightLabel: (unit: string) => `중량 (${unit})`,
+  weightLabel: '중량',
   repsLabel: '횟수',
   savedSets: (name: string, count: number) => `✓ ${name} ${count}세트 저장됨`,
   saveAndNext: '저장하고 다음 세트',
@@ -116,7 +116,6 @@ const ko = {
     `${year}년 ${month}월 ${day}일 (${WEEKDAYS_KO[weekday]})`,
 
   languageTitle: '언어',
-  unitTitle: '무게 단위',
   backupTitle: '데이터 백업',
   backupHint: '모든 기록을 CSV 파일로 내보내 보관하고, 그 파일로 언제든 복원할 수 있어요.',
   backupExport: 'CSV 내보내기',
@@ -186,7 +185,7 @@ const en: typeof ko = {
 
   exerciseLabel: 'Exercise',
   customExercisePlaceholder: 'Not in the list? Type it here',
-  weightLabel: (unit) => `Weight (${unit})`,
+  weightLabel: 'Weight',
   repsLabel: 'Reps',
   savedSets: (name, count) => `✓ ${name} — ${count} ${count === 1 ? 'set' : 'sets'} saved`,
   saveAndNext: 'Save & next set',
@@ -211,7 +210,6 @@ const en: typeof ko = {
     `${MONTHS_EN[month - 1]} ${day}, ${year} (${WEEKDAYS_EN[weekday]})`,
 
   languageTitle: 'Language',
-  unitTitle: 'Weight unit',
   backupTitle: 'Data Backup',
   backupHint: 'Export every log to a CSV file for safekeeping, and restore from it anytime.',
   backupExport: 'Export CSV',

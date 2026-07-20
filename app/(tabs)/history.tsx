@@ -81,7 +81,7 @@ export default function TrackingScreen() {
   };
 
   const handleLongPressSet = (log: ExerciseLog) => {
-    Alert.alert(strings.deleteSetTitle, strings.deleteSetMessage(log.exercise_name, formatWeight(log.weight_kg), log.reps), [
+    Alert.alert(strings.deleteSetTitle, strings.deleteSetMessage(log.exercise_name, formatWeight(log.weight_kg, log.unit), log.reps), [
       { text: strings.cancel, style: 'cancel' },
       {
         text: strings.delete,

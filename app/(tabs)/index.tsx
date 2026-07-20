@@ -15,14 +15,14 @@ import {
   type ExerciseGoal,
 } from '../../lib/db';
 import { strings } from '../../lib/i18n';
-import { formatWeight } from '../../lib/units';
+import { formatWeight, type Unit } from '../../lib/units';
 import { groupByExercise, ExerciseGroupCard } from '../../components/DayLogList';
 import { QuickAddRow } from '../../components/QuickAddRow';
 import { colors } from '../../constants/colors';
 
 type Row =
-  | { type: 'goal'; goal: ExerciseGoal; sets: ExerciseLog[]; lastWeight?: number; lastReps?: number }
-  | { type: 'group'; name: string; sets: ExerciseLog[]; lastWeight?: number; lastReps?: number };
+  | { type: 'goal'; goal: ExerciseGoal; sets: ExerciseLog[]; lastWeight?: number; lastReps?: number; lastUnit?: Unit }
+  | { type: 'group'; name: string; sets: ExerciseLog[]; lastWeight?: number; lastReps?: number; lastUnit?: Unit };
 
 export default function TodayScreen() {
   const db = useSQLiteContext();
@@ -41,7 +41,7 @@ export default function TodayScreen() {
     // 없으면 (다른 날짜 포함) 이 운동의 가장 최근 세트 값을 쓴다.
     const lastValuesFor = async (name: string, sets: ExerciseLog[]) => {
       const last = sets.length > 0 ? sets[sets.length - 1] : await getLastSetForExercise(db, name);
-      return last ? { lastWeight: last.weight_kg, lastReps: last.reps } : {};
+      return last ? { lastWeight: last.weight_kg, lastReps: last.reps, lastUnit: last.unit } : {};
     };
 
     setRows(
@@ -65,8 +65,8 @@ export default function TodayScreen() {
     }, [load])
   );
 
-  const handleQuickAdd = async (exerciseName: string, weightKg: number, reps: number) => {
-    await addLog(db, { date: todayString(), exercise_name: exerciseName, weight_kg: weightKg, reps });
+  const handleQuickAdd = async (exerciseName: string, weightKg: number, reps: number, unit: Unit) => {
+    await addLog(db, { date: todayString(), exercise_name: exerciseName, weight_kg: weightKg, reps, unit });
     load();
   };
 
@@ -75,7 +75,7 @@ export default function TodayScreen() {
   };
 
   const handleLongPressSet = (log: ExerciseLog) => {
-    Alert.alert(strings.deleteSetTitle, strings.deleteSetMessage(log.exercise_name, formatWeight(log.weight_kg), log.reps), [
+    Alert.alert(strings.deleteSetTitle, strings.deleteSetMessage(log.exercise_name, formatWeight(log.weight_kg, log.unit), log.reps), [
       { text: strings.cancel, style: 'cancel' },
       {
         text: strings.delete,
@@ -123,7 +123,8 @@ export default function TodayScreen() {
               sets={item.sets}
               lastWeight={item.lastWeight}
               lastReps={item.lastReps}
-              onAdd={(weight, reps) => handleQuickAdd(item.goal.exercise_name, weight, reps)}
+              lastUnit={item.lastUnit}
+              onAdd={(weight, reps, unit) => handleQuickAdd(item.goal.exercise_name, weight, reps, unit)}
               onPressSet={handlePressSet}
               onLongPress={() => handleLongPressGoal(item.goal)}
               onLongPressSet={handleLongPressSet}
@@ -138,7 +139,8 @@ export default function TodayScreen() {
                 <QuickAddRow
                   initialWeight={item.lastWeight}
                   initialReps={item.lastReps}
-                  onAdd={(weight, reps) => handleQuickAdd(item.name, weight, reps)}
+                  initialUnit={item.lastUnit}
+                  onAdd={(weight, reps, unit) => handleQuickAdd(item.name, weight, reps, unit)}
                 />
               }
             />
@@ -164,6 +166,7 @@ function GoalCard({
   sets,
   lastWeight,
   lastReps,
+  lastUnit,
   onAdd,
   onPressSet,
   onLongPress,
@@ -173,7 +176,8 @@ function GoalCard({
   sets: ExerciseLog[];
   lastWeight?: number;
   lastReps?: number;
-  onAdd: (weightKg: number, reps: number) => void;
+  lastUnit?: Unit;
+  onAdd: (weightKg: number, reps: number, unit: Unit) => void;
   onPressSet: (log: ExerciseLog) => void;
   onLongPress: () => void;
   onLongPressSet: (log: ExerciseLog) => void;
@@ -196,7 +200,7 @@ function GoalCard({
         >
           <Ionicons name="checkmark-circle" size={22} color={colors.success} />
           <Text style={styles.slotLabelDone}>{strings.setIndex(i + 1)}</Text>
-          <Text style={styles.slotDetail}>{strings.setDetail(formatWeight(set.weight_kg), set.reps)}</Text>
+          <Text style={styles.slotDetail}>{strings.setDetail(formatWeight(set.weight_kg, set.unit), set.reps)}</Text>
         </Pressable>
       );
     } else if (i === sets.length) {
@@ -206,7 +210,7 @@ function GoalCard({
           <Ionicons name="ellipse-outline" size={22} color={colors.primary} />
           <Text style={styles.slotLabelActive}>{strings.setIndex(i + 1)}</Text>
           <View style={styles.activeSlotInput}>
-            <QuickAddRow initialWeight={lastWeight} initialReps={lastReps} onAdd={onAdd} />
+            <QuickAddRow initialWeight={lastWeight} initialReps={lastReps} initialUnit={lastUnit} onAdd={onAdd} />
           </View>
         </View>
       );

@@ -14,7 +14,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { addLog, getRecentExerciseNames, getLastSetForExercise, todayString } from '../../lib/db';
 import { strings } from '../../lib/i18n';
-import { fromKg, toKg, unitLabel } from '../../lib/units';
+import { fromKg, toKg, getDefaultUnit, setDefaultUnit, type Unit } from '../../lib/units';
 import { PRESET_EXERCISES } from '../../constants/exercises';
 import { DateField } from '../../components/DateField';
 import { colors } from '../../constants/colors';
@@ -31,6 +31,7 @@ export default function NewLogScreen() {
   const [customName, setCustomName] = useState('');
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
+  const [unit, setUnit] = useState<Unit>(getDefaultUnit());
   const [recentNames, setRecentNames] = useState<string[]>([]);
   const [savedCount, setSavedCount] = useState(0);
 
@@ -49,10 +50,18 @@ export default function NewLogScreen() {
     if (!selectedName || savedCount > 0) return;
     getLastSetForExercise(db, selectedName).then((last) => {
       if (!last) return;
-      setWeight(String(fromKg(last.weight_kg)));
+      setUnit(last.unit);
+      setWeight(String(fromKg(last.weight_kg, last.unit)));
       setReps(String(last.reps));
     });
   }, [db, selectedName, savedCount]);
+  const toggleUnit = () => {
+    const next: Unit = unit === 'kg' ? 'lb' : 'kg';
+    const n = Number(weight);
+    if (weight.trim() !== '' && Number.isFinite(n)) setWeight(String(fromKg(toKg(n, unit), next)));
+    setUnit(next);
+  };
+
   const weightValue = Number(weight);
   const repsValue = Number(reps);
   const canSave =
@@ -67,9 +76,11 @@ export default function NewLogScreen() {
       await addLog(db, {
         date,
         exercise_name: selectedName,
-        weight_kg: toKg(weightValue),
+        weight_kg: toKg(weightValue, unit),
         reps: repsValue,
+        unit,
       });
+      setDefaultUnit(unit);
       return true;
     } catch {
       Alert.alert(strings.saveFailedTitle, strings.saveFailedMessage);
@@ -134,15 +145,20 @@ export default function NewLogScreen() {
 
         <View style={styles.row}>
           <View style={styles.field}>
-            <Text style={styles.label}>{strings.weightLabel(unitLabel())}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="60"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-              value={weight}
-              onChangeText={setWeight}
-            />
+            <Text style={styles.label}>{strings.weightLabel}</Text>
+            <View style={styles.weightRow}>
+              <TextInput
+                style={[styles.input, styles.weightInput]}
+                placeholder="60"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="decimal-pad"
+                value={weight}
+                onChangeText={setWeight}
+              />
+              <Pressable style={styles.unitToggle} onPress={toggleUnit}>
+                <Text style={styles.unitToggleText}>{unit}</Text>
+              </Pressable>
+            </View>
           </View>
           <View style={styles.field}>
             <Text style={styles.label}>{strings.repsLabel}</Text>
@@ -218,6 +234,19 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', gap: 12 },
   field: { flex: 1, gap: 8 },
+  weightRow: { flexDirection: 'row', gap: 8 },
+  weightInput: { flex: 1 },
+  unitToggle: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 56,
+  },
+  unitToggleText: { color: colors.primary, fontSize: 16, fontWeight: '700' },
   savedText: { color: colors.success, fontSize: 14, textAlign: 'center' },
   button: {
     backgroundColor: colors.primary,

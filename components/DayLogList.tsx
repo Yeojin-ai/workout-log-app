@@ -44,7 +44,7 @@ export function ExerciseGroupCard({
           delayLongPress={400}
         >
           <Text style={styles.setIndex}>{strings.setIndex(index + 1)}</Text>
-          <Text style={styles.setDetail}>{strings.setDetail(formatWeight(set.weight_kg), set.reps)}</Text>
+          <Text style={styles.setDetail}>{strings.setDetail(formatWeight(set.weight_kg, set.unit), set.reps)}</Text>
         </Pressable>
       ))}
       {footer}

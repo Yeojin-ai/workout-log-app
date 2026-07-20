@@ -2,22 +2,26 @@ import { useState } from 'react';
 import { View, TextInput, Text, Pressable, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { strings } from '../lib/i18n';
-import { fromKg, toKg, unitLabel } from '../lib/units';
+import { fromKg, toKg, getDefaultUnit, setDefaultUnit, type Unit } from '../lib/units';
 import { colors } from '../constants/colors';
 
-// 카드 안에서 바로 세트를 기록하는 입력줄: [무게][횟수][✓]
-// 직전 세트 값이 미리 채워져 있어서 보통은 ✓만 누르면 된다.
+// 카드 안에서 바로 세트를 기록하는 입력줄: [무게][kg/lb][횟수][회][✓]
+// 직전 세트 값·단위가 미리 채워져 있어서 보통은 ✓만 누르면 된다.
 export function QuickAddRow({
   initialWeight,
   initialReps,
+  initialUnit,
   onAdd,
 }: {
-  initialWeight?: number;
+  initialWeight?: number; // kg으로 들어온다
   initialReps?: number;
-  onAdd: (weightKg: number, reps: number) => void;
+  initialUnit?: Unit;
+  onAdd: (weightKg: number, reps: number, unit: Unit) => void;
 }) {
-  // initialWeight는 kg으로 들어온다 — 현재 단위로 변환해 보여준다.
-  const [weight, setWeight] = useState(initialWeight != null ? String(fromKg(initialWeight)) : '');
+  const [unit, setUnit] = useState<Unit>(initialUnit ?? getDefaultUnit());
+  const [weight, setWeight] = useState(
+    initialWeight != null ? String(fromKg(initialWeight, initialUnit ?? getDefaultUnit())) : ''
+  );
   const [reps, setReps] = useState(initialReps != null ? String(initialReps) : '');
 
   // 무게는 비워두면 0(맨몸 운동)으로 저장한다.
@@ -25,6 +29,19 @@ export function QuickAddRow({
   const repsValue = Number(reps);
   const canAdd =
     Number.isFinite(weightValue) && weightValue >= 0 && Number.isInteger(repsValue) && repsValue > 0;
+
+  // 단위를 바꿀 때 입력값도 같은 실제 무게로 환산해준다 (100lb ↔ 45.36kg).
+  const toggleUnit = () => {
+    const next: Unit = unit === 'kg' ? 'lb' : 'kg';
+    const n = Number(weight);
+    if (weight.trim() !== '' && Number.isFinite(n)) setWeight(String(fromKg(toKg(n, unit), next)));
+    setUnit(next);
+  };
+
+  const add = () => {
+    setDefaultUnit(unit);
+    onAdd(toKg(weightValue, unit), repsValue, unit);
+  };
 
   return (
     <View style={styles.row}>
@@ -37,7 +54,9 @@ export function QuickAddRow({
         placeholderTextColor={colors.textMuted}
         selectTextOnFocus
       />
-      <Text style={styles.unit}>{unitLabel()}</Text>
+      <Pressable style={styles.unitToggle} onPress={toggleUnit} hitSlop={6}>
+        <Text style={styles.unitToggleText}>{unit}</Text>
+      </Pressable>
       <TextInput
         style={styles.input}
         value={reps}
@@ -51,7 +70,7 @@ export function QuickAddRow({
       <Pressable
         style={[styles.addButton, !canAdd && styles.addButtonDisabled]}
         disabled={!canAdd}
-        onPress={() => onAdd(toKg(weightValue), repsValue)}
+        onPress={add}
       >
         <Ionicons name="checkmark" size={22} color="#fff" />
       </Pressable>
@@ -73,6 +92,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
+  unitToggle: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minWidth: 40,
+    alignItems: 'center',
+  },
+  unitToggleText: { color: colors.primary, fontSize: 14, fontWeight: '700' },
   unit: { color: colors.textMuted, fontSize: 13 },
   addButton: {
     backgroundColor: colors.primary,

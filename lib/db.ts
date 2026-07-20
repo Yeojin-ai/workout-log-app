@@ -1,11 +1,13 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
+import type { Unit } from './units';
 
 export type ExerciseLog = {
   id: number;
   date: string; // YYYY-MM-DD (local time)
   exercise_name: string;
-  weight_kg: number;
+  weight_kg: number; // 항상 kg으로 저장
   reps: number;
+  unit: Unit; // 이 세트를 기록/표시하는 단위 (kg | lb)
   created_at: string;
 };
 
@@ -54,6 +56,11 @@ export async function migrateDb(db: SQLiteDatabase) {
       value TEXT NOT NULL
     );
   `);
+  // 세트별 무게 단위 컬럼 (기존 설치본에는 없으므로 없을 때만 추가 — migrateDb는 매 실행 idempotent).
+  const cols = await db.getAllAsync<{ name: string }>('PRAGMA table_info(exercise_logs)');
+  if (!cols.some((c) => c.name === 'unit')) {
+    await db.execAsync("ALTER TABLE exercise_logs ADD COLUMN unit TEXT NOT NULL DEFAULT 'kg'");
+  }
 }
 
 export async function getMetaValue(db: SQLiteDatabase, key: string): Promise<string | null> {
@@ -104,14 +111,15 @@ export function todayString(): string {
 
 export function addLog(
   db: SQLiteDatabase,
-  entry: { date: string; exercise_name: string; weight_kg: number; reps: number }
+  entry: { date: string; exercise_name: string; weight_kg: number; reps: number; unit: Unit }
 ) {
   return db.runAsync(
-    'INSERT INTO exercise_logs (date, exercise_name, weight_kg, reps) VALUES (?, ?, ?, ?)',
+    'INSERT INTO exercise_logs (date, exercise_name, weight_kg, reps, unit) VALUES (?, ?, ?, ?, ?)',
     entry.date,
     entry.exercise_name,
     entry.weight_kg,
-    entry.reps
+    entry.reps,
+    entry.unit
   );
 }
 
@@ -139,12 +147,13 @@ export function getLogById(db: SQLiteDatabase, id: number) {
 export function updateLog(
   db: SQLiteDatabase,
   id: number,
-  fields: { weight_kg: number; reps: number }
+  fields: { weight_kg: number; reps: number; unit: Unit }
 ) {
   return db.runAsync(
-    'UPDATE exercise_logs SET weight_kg = ?, reps = ? WHERE id = ?',
+    'UPDATE exercise_logs SET weight_kg = ?, reps = ?, unit = ? WHERE id = ?',
     fields.weight_kg,
     fields.reps,
+    fields.unit,
     id
   );
 }

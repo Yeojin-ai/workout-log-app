@@ -1,46 +1,33 @@
 import { File, Paths } from 'expo-file-system';
 
-// 무게 표시/입력 단위. 저장은 항상 kg으로 하고(DB의 weight_kg), 표시·입력만 이 단위를 따른다.
-// 볼륨 합산은 kg 기준으로 계산한다 (사용자 요청).
+// 무게 단위는 세트별로 기록된다(exercise_logs.unit). 저장값 weight_kg는 항상 kg이고,
+// 표시·입력만 그 세트의 단위를 따른다. 볼륨 합산은 kg 기준(weight_kg)으로 계산한다.
 export type Unit = 'kg' | 'lb';
 
-const UNIT_FILE = 'weight_unit';
 const KG_PER_LB = 0.45359237;
 
-function readStoredUnit(): Unit | null {
+// 입력 행 토글의 기본값 시드로 쓰는 "마지막으로 쓴 단위" (종목 이력이 없을 때의 폴백).
+const UNIT_FILE = 'weight_unit';
+
+export function getDefaultUnit(): Unit {
   try {
     const f = new File(Paths.document, UNIT_FILE);
-    if (!f.exists) return null;
+    if (!f.exists) return 'kg';
     const v = f.textSync().trim();
-    return v === 'kg' || v === 'lb' ? v : null;
+    return v === 'kg' || v === 'lb' ? v : 'kg';
   } catch {
-    return null;
+    return 'kg';
   }
 }
 
-function writeStoredUnit(unit: Unit) {
+export function setDefaultUnit(unit: Unit) {
   try {
     const f = new File(Paths.document, UNIT_FILE);
     if (!f.exists) f.create();
     f.write(unit);
   } catch {
-    // 저장 실패해도 현재 세션 단위는 바뀐다.
+    // 폴백 기본값 저장 실패는 무시 (다음 입력 기본값에만 영향).
   }
-}
-
-let currentUnit: Unit = readStoredUnit() ?? 'kg';
-
-export function getUnit(): Unit {
-  return currentUnit;
-}
-
-export function setUnit(unit: Unit) {
-  currentUnit = unit;
-  writeStoredUnit(unit);
-}
-
-export function unitLabel(): Unit {
-  return currentUnit;
 }
 
 function round(n: number, dp: number): number {
@@ -48,19 +35,17 @@ function round(n: number, dp: number): number {
   return Math.round(n * f) / f;
 }
 
-// 저장된 kg 값을 현재 단위의 숫자로 (표시·입력 프리필용).
-// lb 입력을 kg으로 저장하면 소수점이 길어지므로 표시할 땐 반올림한다 (kg 2자리, lb 1자리).
-export function fromKg(kg: number): number {
-  return currentUnit === 'kg' ? round(kg, 2) : round(kg / KG_PER_LB, 1);
+// 저장된 kg 값을 주어진 단위의 숫자로 (표시·입력 프리필용). kg 2자리, lb 1자리 반올림.
+export function fromKg(kg: number, unit: Unit): number {
+  return unit === 'kg' ? round(kg, 2) : round(kg / KG_PER_LB, 1);
 }
 
-// 현재 단위로 입력한 값을 저장용 kg으로. kg일 땐 그대로.
-export function toKg(value: number): number {
-  if (currentUnit === 'kg') return value;
-  return value * KG_PER_LB;
+// 주어진 단위로 입력한 값을 저장용 kg으로.
+export function toKg(value: number, unit: Unit): number {
+  return unit === 'kg' ? value : value * KG_PER_LB;
 }
 
-// 저장된 kg 값을 "30kg" / "66.1lb" 형태 문자열로.
-export function formatWeight(kg: number): string {
-  return `${fromKg(kg)}${currentUnit}`;
+// 저장된 kg 값을 그 세트 단위 문자열로 ("100lb" / "45.36kg").
+export function formatWeight(kg: number, unit: Unit): string {
+  return `${fromKg(kg, unit)}${unit}`;
 }

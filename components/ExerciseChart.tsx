@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import Svg, { G, Polyline, Circle, Line, Text as SvgText } from 'react-native-svg';
 import { strings } from '../lib/i18n';
-import { fromKg, unitLabel } from '../lib/units';
+import { fromKg, type Unit } from '../lib/units';
 import { colors } from '../constants/colors';
 
 export type SessionStat = { date: string; max_weight: number; total_reps: number; sets: number };
@@ -13,7 +13,7 @@ const PAD_X = 30;
 const STEP = 62;
 
 // 한 종목의 날짜별 최고 무게(보라)와 총 횟수(초록) 꺾은선 그래프.
-export function ExerciseChart({ sessions }: { sessions: SessionStat[] }) {
+export function ExerciseChart({ sessions, unit }: { sessions: SessionStat[]; unit: Unit }) {
   if (sessions.length === 0) {
     return <Text style={styles.emptyText}>{strings.noChartData}</Text>;
   }
@@ -62,7 +62,7 @@ export function ExerciseChart({ sessions }: { sessions: SessionStat[] }) {
                 <Circle cx={wx} cy={ry} r={4} fill={colors.success} />
                 {/* 횟수 라벨은 점 아래에 둬서 무게 라벨과 겹치지 않게 한다 */}
                 <SvgText x={wx} y={wy - 8} fontSize={10} fill={colors.primary} textAnchor="middle">
-                  {fromKg(session.max_weight)}
+                  {fromKg(session.max_weight, unit)}
                 </SvgText>
                 <SvgText x={wx} y={ry + 16} fontSize={10} fill={colors.success} textAnchor="middle">
                   {session.total_reps}
@@ -84,7 +84,7 @@ export function ExerciseChart({ sessions }: { sessions: SessionStat[] }) {
 
       <View style={styles.legend}>
         <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
-        <Text style={styles.legendText}>{strings.chartWeight(unitLabel())}</Text>
+        <Text style={styles.legendText}>{strings.chartWeight(unit)}</Text>
         <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
         <Text style={styles.legendText}>{strings.chartReps}</Text>
       </View>

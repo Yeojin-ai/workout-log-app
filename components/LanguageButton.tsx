@@ -1,20 +1,31 @@
 import { useState } from 'react';
 import { View, Text, Pressable, Modal, StyleSheet } from 'react-native';
-import { useSettings } from '../lib/settings';
-import { strings } from '../lib/i18n';
+import * as Updates from 'expo-updates';
+import { getLanguage, setLanguage, strings, type Lang } from '../lib/i18n';
 import { colors } from '../constants/colors';
-import type { Lang } from '../lib/i18n';
 
 const OPTIONS: { code: Lang; flag: string; label: string }[] = [
   { code: 'ko', flag: '🇰🇷', label: '한국어' },
   { code: 'en', flag: '🇺🇸', label: 'English' },
 ];
 
-// Stats 헤더 우측의 작은 국기 알약 버튼. 탭하면 언어 선택 팝업이 뜬다.
+// Stats 헤더 우측의 작은 국기 알약 버튼. 탭하면 언어 선택 팝업이 뜨고,
+// 언어를 바꾸면 앱을 자연스럽게 재시작해(스플래시 후) 새 언어로 다시 뜬다.
 export function LanguageButton() {
-  const { lang, setLang } = useSettings();
   const [open, setOpen] = useState(false);
+  const lang = getLanguage();
   const current = OPTIONS.find((o) => o.code === lang) ?? OPTIONS[1];
+
+  const choose = async (code: Lang) => {
+    setOpen(false);
+    if (code === lang) return;
+    setLanguage(code); // 파일에 저장 → 재시작 후 이 값으로 뜬다
+    try {
+      await Updates.reloadAsync();
+    } catch {
+      // 개발 환경 등 재시작이 불가한 경우: 선택은 저장됐으니 다음 실행에 적용된다.
+    }
+  };
 
   return (
     <>
@@ -34,10 +45,7 @@ export function LanguageButton() {
                 <Pressable
                   key={o.code}
                   style={[styles.option, active && styles.optionActive]}
-                  onPress={() => {
-                    setOpen(false);
-                    setLang(o.code);
-                  }}
+                  onPress={() => choose(o.code)}
                 >
                   <Text style={styles.optionText}>
                     {o.flag} {o.label}

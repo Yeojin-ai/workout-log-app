@@ -7,11 +7,11 @@ import { StorageAccessFramework, writeAsStringAsync } from 'expo-file-system/leg
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { buildBackupCsv, parseBackupCsv, importBackup } from '../../lib/backup';
-import { useSettings } from '../../lib/settings';
 import {
   getExerciseNamesByFrequency,
   getExerciseSessionStats,
   getSetCountsByExerciseSince,
+  getLastSetForExercise,
   getLastWorkoutDate,
   getDailySetCounts,
   getMetaValue,
@@ -20,6 +20,7 @@ import {
   todayString,
 } from '../../lib/db';
 import { strings } from '../../lib/i18n';
+import { type Unit } from '../../lib/units';
 import { ExerciseChart, type SessionStat } from '../../components/ExerciseChart';
 import { StickFigure, PartGauges, avatarStage, GOAL_STATE, type AvatarState } from '../../components/StickFigure';
 import { classifyExercise, partLevel, MUSCLE_PARTS, type MusclePart } from '../../constants/muscles';
@@ -65,7 +66,6 @@ function daysAgoString(days: number): string {
 
 export default function StatsScreen() {
   const db = useSQLiteContext();
-  const { unit, setUnit } = useSettings();
   const [stats, setStats] = useState<Stats | null>(null);
   const [avatar, setAvatar] = useState<AvatarState | null>(null);
   const [weakPart, setWeakPart] = useState<MusclePart | null>(null);
@@ -74,6 +74,7 @@ export default function StatsScreen() {
   const [exerciseNames, setExerciseNames] = useState<string[]>([]);
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionStat[]>([]);
+  const [chartUnit, setChartUnit] = useState<Unit>('kg'); // 선택 종목의 최근 세트 단위로 차트 표시
 
   const load = useCallback(async () => {
     const today = todayString();
@@ -180,6 +181,8 @@ export default function StatsScreen() {
         return;
       }
       getExerciseSessionStats(db, selectedExercise).then(setSessions);
+      // 차트 무게는 그 종목의 가장 최근 세트 단위로 표시한다 (한 종목은 보통 한 단위로 기록).
+      getLastSetForExercise(db, selectedExercise).then((last) => setChartUnit(last?.unit ?? 'kg'));
     }, [db, selectedExercise])
   );
 
@@ -245,7 +248,7 @@ export default function StatsScreen() {
             })}
           </View>
 
-          <ExerciseChart sessions={sessions} />
+          <ExerciseChart sessions={sessions} unit={chartUnit} />
         </View>
       )}
 
@@ -257,25 +260,6 @@ export default function StatsScreen() {
           <Text style={styles.caption}>{strings.monthSummary(month.days, month.volumeKg)}</Text>
         </View>
       )}
-
-      {/* 무게 단위 */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>{strings.unitTitle}</Text>
-        <View style={styles.backupRow}>
-          <Pressable
-            style={[styles.langButton, unit === 'kg' && styles.langButtonActive]}
-            onPress={() => setUnit('kg')}
-          >
-            <Text style={[styles.langButtonText, unit === 'kg' && styles.langButtonTextActive]}>kg</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.langButton, unit === 'lb' && styles.langButtonActive]}
-            onPress={() => setUnit('lb')}
-          >
-            <Text style={[styles.langButtonText, unit === 'lb' && styles.langButtonTextActive]}>lb</Text>
-          </Pressable>
-        </View>
-      </View>
 
       {/* 데이터 백업 */}
       <View style={styles.card}>
