@@ -9,7 +9,8 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0B0B0F",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.fitnessapp"
     },
     "android": {
       "adaptiveIcon": {

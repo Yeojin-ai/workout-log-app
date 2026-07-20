@@ -1,7 +1,39 @@
 import { getLocales } from 'expo-localization';
+import { File, Paths } from 'expo-file-system';
 
-// 기기 언어가 한국어면 한국어, 그 외에는 영어로 표시한다.
-export const isKorean = (getLocales()[0]?.languageCode ?? 'en') === 'ko';
+export type Lang = 'ko' | 'en';
+
+// 사용자가 앱 안에서 고른 언어를 작은 파일에 저장한다. DB 마이그레이션 타이밍과
+// 무관하게 앱 시작 시점에 동기적으로 읽을 수 있도록 meta 테이블 대신 파일을 쓴다.
+const LANG_FILE = 'language';
+
+function readStoredLang(): Lang | null {
+  try {
+    const f = new File(Paths.document, LANG_FILE);
+    if (!f.exists) return null;
+    const v = f.textSync().trim();
+    return v === 'ko' || v === 'en' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredLang(lang: Lang) {
+  try {
+    const f = new File(Paths.document, LANG_FILE);
+    if (!f.exists) f.create();
+    f.write(lang);
+  } catch {
+    // 저장 실패해도 현재 세션 언어는 바뀌므로 조용히 넘어간다.
+  }
+}
+
+// 저장된 선택이 없으면 기기 언어를 따른다 (한국어면 ko, 그 외 en).
+const deviceLang: Lang = (getLocales()[0]?.languageCode ?? 'en') === 'ko' ? 'ko' : 'en';
+let currentLang: Lang = readStoredLang() ?? deviceLang;
+
+// 기존 코드 호환용 (i18n 내부에서만 참조). 시작 시점 스냅샷이다.
+export const isKorean = currentLang === 'ko';
 
 const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
 const WEEKDAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -83,6 +115,7 @@ const ko = {
   formatDateLong: (year: number, month: number, day: number, weekday: number) =>
     `${year}년 ${month}월 ${day}일 (${WEEKDAYS_KO[weekday]})`,
 
+  languageTitle: '언어',
   backupTitle: '데이터 백업',
   backupHint: '모든 기록을 CSV 파일로 내보내 보관하고, 그 파일로 언제든 복원할 수 있어요.',
   backupExport: 'CSV 내보내기',
@@ -176,6 +209,7 @@ const en: typeof ko = {
   formatDateLong: (year, month, day, weekday) =>
     `${MONTHS_EN[month - 1]} ${day}, ${year} (${WEEKDAYS_EN[weekday]})`,
 
+  languageTitle: 'Language',
   backupTitle: 'Data Backup',
   backupHint: 'Export every log to a CSV file for safekeeping, and restore from it anytime.',
   backupExport: 'Export CSV',
@@ -195,4 +229,16 @@ const en: typeof ko = {
   importInvalidMessage: "This doesn't look like a valid backup CSV file.",
 };
 
-export const strings = isKorean ? ko : en;
+// 화면들은 `strings`를 렌더 시점에 읽는다. 언어를 바꾸면 이 바인딩을 교체하고
+// (ES 모듈 live binding으로 import 측에도 반영됨) 트리를 remount해 즉시 반영한다.
+export let strings = currentLang === 'ko' ? ko : en;
+
+export function getLanguage(): Lang {
+  return currentLang;
+}
+
+export function setLanguage(lang: Lang) {
+  currentLang = lang;
+  strings = lang === 'ko' ? ko : en;
+  writeStoredLang(lang);
+}

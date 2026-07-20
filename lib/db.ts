@@ -54,11 +54,6 @@ export async function migrateDb(db: SQLiteDatabase) {
       value TEXT NOT NULL
     );
   `);
-  // 예전 수기 메모 데이터 1회성 임포트 (meta 플래그로 중복 방지)
-  const { importLegacyData, renameKoreanExercises } = await import('./seed');
-  await importLegacyData(db);
-  // 기존 설치본의 한국어 운동명을 영어로 일괄 변경 (1회성)
-  await renameKoreanExercises(db);
 }
 
 export async function getMetaValue(db: SQLiteDatabase, key: string): Promise<string | null> {

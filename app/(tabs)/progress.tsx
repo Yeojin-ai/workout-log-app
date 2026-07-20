@@ -7,6 +7,7 @@ import { StorageAccessFramework, writeAsStringAsync } from 'expo-file-system/leg
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { buildBackupCsv, parseBackupCsv, importBackup } from '../../lib/backup';
+import { useLanguage } from '../../lib/language';
 import {
   getExerciseNamesByFrequency,
   getExerciseSessionStats,
@@ -64,6 +65,7 @@ function daysAgoString(days: number): string {
 
 export default function StatsScreen() {
   const db = useSQLiteContext();
+  const { lang, setLang } = useLanguage();
   const [stats, setStats] = useState<Stats | null>(null);
   const [avatar, setAvatar] = useState<AvatarState | null>(null);
   const [weakPart, setWeakPart] = useState<MusclePart | null>(null);
@@ -255,6 +257,25 @@ export default function StatsScreen() {
           <Text style={styles.caption}>{strings.monthSummary(month.days, month.volumeKg)}</Text>
         </View>
       )}
+
+      {/* 언어 선택 */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{strings.languageTitle}</Text>
+        <View style={styles.backupRow}>
+          <Pressable
+            style={[styles.langButton, lang === 'ko' && styles.langButtonActive]}
+            onPress={() => setLang('ko')}
+          >
+            <Text style={[styles.langButtonText, lang === 'ko' && styles.langButtonTextActive]}>한국어</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.langButton, lang === 'en' && styles.langButtonActive]}
+            onPress={() => setLang('en')}
+          >
+            <Text style={[styles.langButtonText, lang === 'en' && styles.langButtonTextActive]}>English</Text>
+          </Pressable>
+        </View>
+      </View>
 
       {/* 데이터 백업 */}
       <View style={styles.card}>
@@ -451,6 +472,18 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   backupButtonText: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  langButton: {
+    flex: 1,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  langButtonActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  langButtonText: { color: colors.text, fontSize: 14, fontWeight: '600' },
+  langButtonTextActive: { color: '#fff' },
   monthStrip: { flexDirection: 'row', gap: 3, flexWrap: 'wrap' },
   monthCell: {
     flexGrow: 1,

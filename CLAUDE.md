@@ -64,10 +64,10 @@ embedded bundle).
 date, exercise_name, weight_kg, reps), `exercise_goals` (per date+exercise target set count, UNIQUE
 on that pair — `setGoal` upserts), `day_notes` (per-date free-text `note` + `cardio` fields, edited
 on the Tracking tab; green dot on calendar days that have one), and `meta` (key/value flags).
-[lib/seed.ts](lib/seed.ts) imports the user's pre-app paper logs (2026-05-24 ~ 07-19) once on first
-launch, guarded by the `legacy_import_v1` meta flag — never re-run it, and bump to a new flag name
-if more legacy data needs importing. Exercise names in the seed were confirmed with the user
-(e.g. their "Pectoral Fly" machine is actually a Reverse Pec Deck). Goals and logs are linked **by matching date +
+The app ships empty (no seed) — new users start with a clean DB and restore prior data via the CSV
+import on the Stats tab. (A one-time `lib/seed.ts` importer for the owner's pre-app paper logs was
+removed once that data was exported to CSV; if you reintroduce a seed, guard it with a `meta` flag so
+it never double-imports.) Goals and logs are linked **by matching date +
 exercise_name strings**, not by foreign key: `getGoalsByDate` computes `done_sets` by counting
 matching logs, so renaming an exercise breaks the link. lib/db.ts is the only place SQL lives —
 screens call its exported helpers plus ad-hoc aggregate queries in the stats screen. The schema is
